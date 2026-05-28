@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>目前捐贈物資清單</title>
+</head>
+<body>
+    <h1>物資捐贈看板</h1>
+    <table border="1">
+        <tr>
+            <th>ID</th>
+            <th>物資名稱</th>
+            <th>數量</th>
+            <th>捐贈者</th>
+        </tr>
+        <!-- 這裡利用 for 迴圈把資料庫裡的每筆資料抓出來 -->
+        {% for item in items %}
+        <tr>
+            <td>{{ item.id }}</td>
+            <td>{{ item.item_name }}</td>
+            <td>{{ item.quantity }}</td>
+            <td>{{ item.donor_name }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    <br>
+    <a href="/donate">繼續捐贈</a>
+    <a href="/">回到首頁</a>
+</body>
+</html>

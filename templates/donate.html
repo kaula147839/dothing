@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>捐贈物資 - 慈善媒合系統</title>
+</head>
+<body>
+    <h1>登記捐贈物資</h1>
+    <!-- action="/donate" 代表按下按鈕後會把資料傳給 app.py 的 /donate 路徑 -->
+    <form action="/donate" method="POST">
+        <label>物資名稱：</label>
+        <select name="item_name" required>
+            <option value="">--請選擇物資--</option>
+            {% for option in options %}
+                <option value="{{ option }}">{{ option }}</option>
+            {% endfor %}
+        </select>
+        <label>數量：</label>
+        <input type="number" name="quantity" required><br><br>
+        
+        <label>捐贈者姓名：</label>
+        <input type="text" name="donor_name" required><br><br>
+        
+        <button type="submit">確認送出</button>
+    </form>
+    <br>
+    <a href="/">回到首頁</a>
+</body>
+</html>
