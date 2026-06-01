@@ -2,29 +2,59 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>目前捐贈物資清單</title>
+    <title>物資捐贈清單</title>
+    <style>
+        /* 簡單的美化一下表格，讓視覺更清楚 */
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #f4f4f4; }
+        tr:hover { background-color: #f9f9f9; }
+        .search-area { margin-bottom: 20px; padding: 15px; background: #eee; }
+    </style>
+    
 </head>
 <body>
-    <h1>物資捐贈看板</h1>
-    <table border="1">
+    <h1>目前物資清單</h1>
+
+    <div class="search-area">
+        <form action="/list" method="GET">
+            <input type="text" name="q" placeholder="輸入搜尋關鍵字..." value="{{ query }}">
+            <button type="submit">搜尋</button>
+            <a href="/list">清除搜尋</a>
+        </form>
+    </div>
+
+    <table>
         <tr>
             <th>ID</th>
-            <th>物資名稱</th>
+            <th><a href="/list?sort=item&q={{ query }}">物資名稱</a></th>
             <th>數量</th>
-            <th>捐贈者</th>
+            <th><a href="/list?sort=name&q={{ query }}">捐贈者</a></th>
+            <th><a href="/list?sort=timestamp&q={{ query }}">捐贈時間</a></th>
         </tr>
-        <!-- 這裡利用 for 迴圈把資料庫裡的每筆資料抓出來 -->
+        
         {% for item in items %}
         <tr>
             <td>{{ item.id }}</td>
             <td>{{ item.item_name }}</td>
             <td>{{ item.quantity }}</td>
             <td>{{ item.donor_name }}</td>
+            <td>{{ item.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="5" style="text-align:center;">目前沒有找到符合的物資紀錄</td>
         </tr>
         {% endfor %}
     </table>
+
     <br>
-    <a href="/donate">繼續捐贈</a>
     <a href="/">回到首頁</a>
+    <script>
+        // 設定每 5 秒 (5000 毫秒) 自動重新整理一次
+        setInterval(function(){
+            location.reload();
+        }, 5000);
+    </script>
 </body>
 </html>

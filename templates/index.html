@@ -5,8 +5,23 @@
     <title>慈善物資媒合系統</title>
 </head>
 <body>
-    <h1>歡迎來到慈善物資媒合平台</h1>
-    <p>這是我們第一個 Web 專案！</p>
-    <a href="/donate">前往捐贈頁面</a>
-</body>
+    <h1>慈善物資媒合平台</h1>
+    <p>歡迎使用，您可以選擇以下動作：</p>
+    
+    <ul>
+        <li><a href="/donate">我要捐贈物資</a></li>
+        <li><a href="/list">檢視目前物資清單</a></li>
+    </ul>
+
+    <hr> <div id="admin-login-area">
+        <button onclick="document.getElementById('login-form').style.display='block'">管理員登入</button>
+        
+        <div id="login-form" style="display:none; margin-top: 10px;">
+            <form action="/admin" method="GET">
+                <input type="password" name="password" placeholder="請輸入管理密碼" required>
+                <button type="submit">確認</button>
+            </form>
+        </div>
+    </div>
+    </body>
 </html>

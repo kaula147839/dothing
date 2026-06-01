@@ -2,19 +2,37 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>捐贈物資 - 慈善媒合系統</title>
+    <title>捐贈物資 - 慈ㄋ善媒合系統</title>
 </head>
 <body>
     <h1>登記捐贈物資</h1>
     <!-- action="/donate" 代表按下按鈕後會把資料傳給 app.py 的 /donate 路徑 -->
     <form action="/donate" method="POST">
         <label>物資名稱：</label>
-        <select name="item_name" required>
-            <option value="">--請選擇物資--</option>
-            {% for option in options %}
-                <option value="{{ option }}">{{ option }}</option>
-            {% endfor %}
-        </select>
+    <select name="item_name" id="item_select" onchange="checkOther(this.value)" required>
+        <option value="">--請選擇物資--</option>
+        <option value="輪椅">輪椅</option>
+        <option value="血壓計">血壓計</option>
+        <option value="成人尿布">成人尿布</option>
+        <option value="其他">其他</option>
+    </select>
+    <div id="other_input_div" style="display:none; margin-top: 5px;">
+        <label>請輸入其他物資名稱：</label>
+        <input type="text" name="other_item" id="other_item_input">
+    </div>
+
+    <script>
+    function checkOther(value) {
+        var otherDiv = document.getElementById('other_input_div');
+        if (value === '其他') {
+            otherDiv.style.display = 'block'; // 顯示輸入框
+            document.getElementById('other_item_input').required = true; // 設為必填
+        } else {
+            otherDiv.style.display = 'none'; // 隱藏
+            document.getElementById('other_item_input').required = false; // 取消必填
+        }
+    }
+    </script>
         <label>數量：</label>
         <input type="number" name="quantity" required><br><br>
         

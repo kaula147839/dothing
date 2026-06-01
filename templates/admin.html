@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>管理員後台</title>
+    
+</head>
+<body>
+    <h1>管理員後台：物資清單維護</h1>
+    <table border="1">
+        <tr>
+        <th>ID</th>
+        <th><a href="/admin?sort=item&password={{ request.args.get('password') }}">物資名稱</a></th>
+        <th>數量</th>
+        <th><a href="/admin?sort=name&password={{ request.args.get('password') }}">捐贈者</a></th>
+        <th><a href="/admin?sort=timestamp&password={{ request.args.get('password') }}">捐贈時間</a></th>
+        <th>操作</th>
+    </tr>
+        {% for item in items %}
+    <tr>
+        <td>{{ item.id }}</td>
+        <td>{{ item.item_name }}</td>
+        <td>{{ item.quantity }}</td>
+        <td>{{ item.donor_name }}</td>
+        <td>{{ item.timestamp.strftime('%Y-%m-%d %H:%M') }}</td> <td>
+            <a href="/delete/{{ item.id }}?password={{ request.args.get('password') }}" 
+            onclick="return confirm('確定要刪除嗎？')">刪除</a>
+        </td>
+    </tr>
+    {% endfor %}
+    </table>
+    <div style="margin-top: 20px;">
+        <a href="/export" style="background-color: #28a745; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
+            匯出 Excel 報表
+        </a>
+    </div>
+    <br>
+    <a href="/">回到首頁</a>
+</body>
+</html>
