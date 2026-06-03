@@ -4,12 +4,18 @@ from flask_sqlalchemy import SQLAlchemy # 1. 記得匯入這個
 import os
 from datetime import datetime 
 import io 
+from werkzeug.utils import secure_filename
+
 app = Flask(__name__)
 
 # 2. 設定資料庫檔案的路徑
 basedir = os.path.abspath(os.path.dirname(__file__))
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'charity.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+# 建立上傳資料夾的路徑設定
+app.config['UPLOAD_FOLDER'] = 'static/uploads'
+# 自動建立資料夾（如果不存在的話），避免程式找不到地方存檔而報錯
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 # 3. 初始化 db 物件 (這就是為什麼之前會報錯，因為沒這行)
 db = SQLAlchemy(app)
@@ -25,6 +31,8 @@ class Donation(db.Model):
     address = db.Column(db.String(200), nullable=False)
     # 新增這行：記錄聯絡電話
     phone = db.Column(db.String(20), nullable=False)
+    # 新增這行：記錄照片的檔名 (允許空白)
+    image_filename = db.Column(db.String(200), nullable=True)
     timestamp = db.Column(db.DateTime, default=datetime.now)
 
 # 5. 在程式第一次執行時建立資料庫檔案
@@ -70,6 +78,15 @@ def donate():
         if item == '其他':
             item = request.form.get('other_item')
             
+        # 新增：處理照片上傳的邏輯 
+        photo = request.files.get('photo')
+        filename = None # 預設為沒有照片
+        if photo and photo.filename != '':
+            # 過濾檔名確保安全
+            filename = secure_filename(photo.filename)
+            # 存檔到 static/uploads/ 裡面
+            photo.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+
         new_item = Donation(
             item_name=item,
             quantity=request.form.get('quantity'),
@@ -136,6 +153,8 @@ def export_excel():
         "物品狀況": item.condition,       
         "捐贈地址": item.address, 
         "聯絡電話": item.phone,
+        # 這裡用一個簡單的 if 判斷式，如果有檔名就顯示檔名，沒有就顯示「無照片」
+        "照片檔案": item.image_filename if item.image_filename else "無照片"
     } for item in items]
     df_all = pd.DataFrame(data)
     

@@ -34,6 +34,7 @@
             <th>物品狀況</th>
             <th>捐贈地址</th>
             <th>聯絡電話</th>    
+            <th>照片</th>
         </tr>
         
         {% for item in items %}
@@ -46,6 +47,13 @@
             <td>{{ item.condition }}</td>
             <td>{{ item.address }}</td>
             <td>{{ item.phone }}</td>
+            <td>
+                {% if item.image_filename %}
+                    <img src="{{ url_for('static', filename='uploads/' + item.image_filename) }}" alt="物資照片" style="max-width: 100px; max-height: 100px;">
+                {% else %}
+                    <span style="color: gray;">無照片</span>
+                {% endif %}
+            </td>
         </tr>
         {% else %}
         <tr>

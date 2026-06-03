@@ -7,7 +7,7 @@
 <body>
     <h1>登記捐贈物資</h1>
     <!-- action="/donate" 代表按下按鈕後會把資料傳給 app.py 的 /donate 路徑 -->
-    <form action="/donate" method="POST">
+    <form action="/donate" method="POST" enctype="multipart/form-data">
         <label>物資名稱：</label>
     <select name="item_name" id="item_select" onchange="checkOther(this.value)" required>
         <option value="">--請選擇物資--</option>
@@ -52,6 +52,11 @@
         <label>捐贈者姓名：</label>
         <input type="text" name="donor_name" required><br><br>
         
+        <div style="margin-top: 10px; margin-bottom: 10px;">
+            <label>物資照片 (可現場拍攝或上傳)：</label>
+            <input type="file" name="photo" accept="image/*" capture="environment">
+        </div>
+
         <button type="submit">確認送出</button>
     </form>
     <br>
