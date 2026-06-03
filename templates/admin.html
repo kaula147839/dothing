@@ -14,6 +14,7 @@
         <th>數量</th>
         <th><a href="/admin?sort=name&password={{ request.args.get('password') }}">捐贈者</a></th>
         <th><a href="/admin?sort=timestamp&password={{ request.args.get('password') }}">捐贈時間</a></th>
+        <th>物品狀況</th>
         <th>操作</th>
     </tr>
         {% for item in items %}
@@ -22,7 +23,9 @@
         <td>{{ item.item_name }}</td>
         <td>{{ item.quantity }}</td>
         <td>{{ item.donor_name }}</td>
-        <td>{{ item.timestamp.strftime('%Y-%m-%d %H:%M') }}</td> <td>
+        <td>{{ item.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
+        <td>{{ item.condition }}</td>
+        <td>
             <a href="/delete/{{ item.id }}?password={{ request.args.get('password') }}" 
             onclick="return confirm('確定要刪除嗎？')">刪除</a>
         </td>

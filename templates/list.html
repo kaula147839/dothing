@@ -31,6 +31,7 @@
             <th>數量</th>
             <th><a href="/list?sort=name&q={{ query }}">捐贈者</a></th>
             <th><a href="/list?sort=timestamp&q={{ query }}">捐贈時間</a></th>
+            <th>物品狀況</th>
         </tr>
         
         {% for item in items %}
@@ -40,10 +41,11 @@
             <td>{{ item.quantity }}</td>
             <td>{{ item.donor_name }}</td>
             <td>{{ item.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
+            <td>{{ item.condition }}</td>
         </tr>
         {% else %}
         <tr>
-            <td colspan="5" style="text-align:center;">目前沒有找到符合的物資紀錄</td>
+            <td colspan="6" style="text-align:center;">目前沒有找到符合的物資紀錄</td>
         </tr>
         {% endfor %}
     </table>

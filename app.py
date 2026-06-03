@@ -20,7 +20,10 @@ class Donation(db.Model):
     item_name = db.Column(db.String(100), nullable=False)
     quantity = db.Column(db.Integer, nullable=False)
     donor_name = db.Column(db.String(100), nullable=False)
+    # 新增這行：記錄全新或二手
+    condition = db.Column(db.String(10), nullable=False) 
     timestamp = db.Column(db.DateTime, default=datetime.now)
+
 # 5. 在程式第一次執行時建立資料庫檔案
 with app.app_context():
     db.create_all()
@@ -61,21 +64,35 @@ def home():
 def donate():
     if request.method == 'POST':
         item = request.form.get('item_name')
-        
-        # 如果使用者選「其他」，就改用自定義的那個欄位
         if item == '其他':
             item = request.form.get('other_item')
             
         new_item = Donation(
-            item_name=item, # 存入判斷後的名稱
+            item_name=item,
             quantity=request.form.get('quantity'),
-            donor_name=request.form.get('donor_name')
+            donor_name=request.form.get('donor_name'),
+            # 新增這行：抓取表單中的 condition 數值
+            condition=request.form.get('condition') 
         )
         db.session.add(new_item)
         db.session.commit()
-        return redirect(url_for('home'))
+        return redirect(url_for('list_items')) # 或 redirect(url_for('home'))
         
     return render_template('donate.html')
+
+@app.route('/delete/<int:id>')
+def delete_item(id):
+    # 獲取密碼以維持權限
+    pwd = request.args.get('password')
+    
+    # 根據 ID 找到資料並刪除
+    item_to_delete = Donation.query.get_or_404(id)
+    db.session.delete(item_to_delete)
+    db.session.commit()
+    
+    # 刪除後跳回管理頁面，並帶上密碼參數
+    return redirect(url_for('admin_panel', password=pwd))
+
 
 # 新增一個刪除功能
 @app.route('/admin', methods=['GET'])
@@ -97,43 +114,42 @@ def admin_panel():
         
     return render_template('admin.html', items=items)
 
-@app.route('/delete/<int:id>')
-def delete_item(id):
-    # 獲取密碼以維持權限
-    pwd = request.args.get('password')
-    
-    # 根據 ID 找到資料並刪除
-    item_to_delete = Donation.query.get_or_404(id)
-    db.session.delete(item_to_delete)
-    db.session.commit()
-    
-    # 刪除後跳回管理頁面，並帶上密碼參數
-    return redirect(url_for('admin_panel', password=pwd))
 
 @app.route('/export')
 def export_excel():
-    # 1. 把所有資料抓出來
     items = Donation.query.all()
     
-    # 2. 轉換成 pandas 的 DataFrame 格式
+    # 1. 建立一個大的 DataFrame
     data = [{
         "ID": item.id,
         "物資名稱": item.item_name,
+        "物品狀況": item.condition,
         "數量": item.quantity,
         "捐贈者": item.donor_name,
-        "捐贈時間": item.timestamp.strftime('%Y-%m-%d %H:%M')
+        "捐贈時間": item.timestamp.strftime('%Y-%m-%d %H:%M'),
     } for item in items]
+    df_all = pd.DataFrame(data)
     
-    df = pd.DataFrame(data)
-    
-    # 3. 把 Excel 存在記憶體中，不用真的存一個檔案在硬碟裡
+    # 2. 準備在記憶體中建立 Excel
     output = io.BytesIO()
-    df.to_excel(output, index=False, engine='openpyxl')
-    output.seek(0)
     
-    # 4. 回傳給瀏覽器下載
-    return send_file(output, download_name="donations.xlsx", as_attachment=True)
-
+    # 3. 使用 ExcelWriter 來寫入多個 Sheet
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        # Sheet 1: 所有資料總表
+        df_all.to_excel(writer, sheet_name='全部資料', index=False)
+        
+        # Sheet 2, 3, ... : 依照物資名稱分組
+        # 取得所有獨特的物資名稱
+        unique_items = df_all['物資名稱'].unique()
+        for item_name in unique_items:
+            # 篩選出該物資的資料
+            df_subset = df_all[df_all['物資名稱'] == item_name]
+            # 寫入對應名稱的 Sheet (Excel 的 sheet 名稱限制 31 字以內)
+            writer_name = str(item_name)[:31]
+            df_subset.to_excel(writer, sheet_name=writer_name, index=False)
+    
+    output.seek(0)
+    return send_file(output, download_name="donations_report.xlsx", as_attachment=True)
 @app.route('/api/items')
 def get_items():
     items = Donation.query.all()
