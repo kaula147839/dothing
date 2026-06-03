@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>申請物資 - 慈善媒合系統</title>
+</head>
+<body>
+    <h1>登記申請物資</h1>
+    <!-- action="/request" 代表按下按鈕後會把資料傳給 app.py 的 /request 路徑 -->
+    <form action="/request" method="POST" style="line-height: 2;">
+        
+        <div style="margin-top: 10px;">
+            <label>需求物資名稱：</label>
+            <input type="text" name="item_name" placeholder="例如：輪椅、成人尿布" required>
+        </div>
+
+        <div style="margin-top: 10px;">
+            <label>需求數量：</label>
+            <input type="number" name="quantity" min="1" required>
+        </div>
+
+        <div style="margin-top: 10px;">
+            <label>申請單位 / 聯絡人：</label>
+            <input type="text" name="requester_name" placeholder="例如：大樹區王社工" required>
+        </div>
+
+        <div style="margin-top: 10px;">
+            <label>需求據點：</label>
+            <select name="address" required>
+                <option value="">-- 請選擇據點 --</option>
+                <option value="北部據點">北部據點</option>
+                <option value="中部據點">中部據點</option>
+                <option value="南部據點">南部據點</option>
+                <option value="西部據點">西部據點</option>
+                <option value="東部據點">東部據點</option>
+            </select>
+        </div>
+
+        <div style="margin-top: 10px;">
+            <label>需求急迫性 (1最不急 ~ 5最緊急)：</label>
+            <select name="urgency" required>
+                <option value="">-- 請評估急迫性 --</option>
+                <option value="1">1 - 一般補充</option>
+                <option value="2">2 - 近期需要</option>
+                <option value="3">3 - 庫存快空了</option>
+                <option value="4">4 - 非常緊急</option>
+                <option value="5">5 - 關乎生命安全</option>
+            </select>
+        </div>
+
+        <button type="submit" style="margin-top: 20px; padding: 10px 20px; cursor: pointer;">送出申請</button>
+    </form>
+    <br>
+    <a href="/">回到首頁</a>
+</body>
+</html>

@@ -35,6 +35,20 @@ class Donation(db.Model):
     image_filename = db.Column(db.String(200), nullable=True)
     timestamp = db.Column(db.DateTime, default=datetime.now)
 
+class RequestItem(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    item_name = db.Column(db.String(100), nullable=False) # 需要什麼物資
+    quantity = db.Column(db.Integer, nullable=False)      # 需要多少
+    requester_name = db.Column(db.String(100), nullable=False) # 申請單位/人
+    
+    # 對應你的演算法變數：
+    address = db.Column(db.String(50), nullable=False)    # 據點位置 (用來算 Distance)
+    urgency = db.Column(db.Integer, nullable=False)       # 急迫性 1~5 分 (用來算 Urgency_Level)
+    timestamp = db.Column(db.DateTime, default=datetime.now) # 申請時間 (用來算 Duration_Of_Waiting)
+    
+    # 紀錄是否已經被滿足 (預設為 False 代表還在等)
+    is_fulfilled = db.Column(db.Boolean, default=False)
+
 # 5. 在程式第一次執行時建立資料庫檔案
 with app.app_context():
     db.create_all()
@@ -179,6 +193,23 @@ def export_excel():
     
     output.seek(0)
     return send_file(output, download_name="donations_report.xlsx", as_attachment=True)
+
+@app.route('/request', methods=['GET', 'POST'])
+def make_request():
+    if request.method == 'POST':
+        new_request = RequestItem(
+            item_name=request.form.get('item_name'),
+            quantity=request.form.get('quantity'),
+            requester_name=request.form.get('requester_name'),
+            address=request.form.get('address'),
+            # 把急迫性轉成整數存進去
+            urgency=int(request.form.get('urgency')) 
+        )
+        db.session.add(new_request)
+        db.session.commit()
+        return redirect(url_for('home')) # 假設送出後回首頁
+        
+    return render_template('request.html')
 
 @app.route('/api/items')
 def get_items():
