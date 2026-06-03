@@ -31,7 +31,38 @@
     <a href="/" class="btn btn-secondary">⬅ 回到系統首頁</a>
     
     <h1>🛡️ 系統管理員後台 (Admin Dashboard)</h1>
-
+    <div class="container" style="border-left: 5px solid #6f42c1;">
+        <h2>🏢 營運據點參數設定 (演算法權重調整)</h2>
+        <p style="color: #666; font-size: 14px;">工作人員可在下方直接修改各據點的真實地址與基礎配送距離，修改後將即時影響演算法的匹配總分！</p>
+        
+        <table>
+            <tr style="background-color: #6f42c1;">
+                <th>據點名稱</th>
+                <th>目前設定地址</th>
+                <th>預設配送距離 (km)</th>
+                <th>操作</th>
+            </tr>
+            
+            {% for hub in hubs %}
+            <tr>
+                <form action="/update_hub" method="POST">
+                    <input type="hidden" name="hub_id" value="{{ hub.id }}">
+                    
+                    <td><strong>{{ hub.name }}</strong></td>
+                    <td>
+                        <input type="text" name="address" value="{{ hub.address }}" style="width: 90%; padding: 4px;">
+                    </td>
+                    <td>
+                        <input type="number" name="base_distance" value="{{ hub.base_distance }}" step="0.1" min="1" style="width: 70px; padding: 4px;">
+                    </td>
+                    <td>
+                        <button type="submit" class="btn" style="background-color: #6f42c1;">💾 儲存修改</button>
+                    </td>
+                </form>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
     <div class="container">
         <h2>🎁 捐贈物資管理 (可分配資源)</h2>
         <a href="/export_donations" class="btn btn-success" style="margin-bottom: 10px;">匯出 Excel 報表</a>
@@ -58,6 +89,8 @@
                 <td>{{ item.condition }}</td>
                 <td>{{ item.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
                 <td>
+                    <a href="/match/{{ item.id }}" class="btn" style="background-color: #17a2b8; margin-right: 5px;">🤖 分配此物資</a>
+                    
                     <a href="/delete_donation/{{ item.id }}" class="btn btn-danger" onclick="return confirm('確定要永久刪除這筆捐贈紀錄嗎？');">刪除</a>
                 </td>
             </tr>
@@ -99,7 +132,9 @@
                     {% if req.is_fulfilled %}
                         <span class="status-done">✅ 已結案</span>
                     {% else %}
-                        <a href="/finish_request/{{ req.id }}" class="btn btn-success" onclick="return confirm('確認此需求已透過演算法或人工媒合完畢，將標記為結案？');">標記結案</a>
+                        <a href="/match_request/{{ req.id }}" class="btn" style="background-color: #17a2b8; margin-right: 5px;">🤖 搜尋物資</a>
+                        
+                        <a href="/finish_request/{{ req.id }}" class="btn btn-success" onclick="return confirm('確認此需求已結案？');">手動結案</a>
                     {% endif %}
                 </td>
             </tr>

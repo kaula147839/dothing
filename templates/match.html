@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>AI 智能媒合分析</title>
+    <style>
+        body { font-family: sans-serif; margin: 20px; background-color: #f0f2f5; }
+        .card { background-color: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: center; }
+        th { background-color: #007bff; color: white; }
+        .highlight { background-color: #fff3cd; font-weight: bold; } /* 最高分亮橘色 */
+        .btn { padding: 8px 15px; text-decoration: none; border-radius: 4px; color: white; background-color: #28a745; }
+    </style>
+</head>
+<body>
+
+    <a href="/admin?password=1234" style="text-decoration:none; color: #555;">⬅ 回到後台</a>
+
+    <div class="card" style="border-left: 5px solid #007bff;">
+        <h2>📦 準備配送的物資</h2>
+        <p><strong>物資名稱：</strong> {{ donation.item_name }} (數量: {{ donation.quantity }})</p>
+        <p><strong>目前存放據點：</strong> {{ donation.address }}</p>
+        <p><strong>物品狀況：</strong> {{ donation.condition }}</p>
+    </div>
+
+    <div class="card">
+        <h2>🧠 演算法推薦配送名單</h2>
+        <p>公式：$Score = w_1 \cdot (1/Distance) + w_2 \cdot (Urgency\_Level) + w_3 \cdot (Waiting\_Hours)$</p>
+        
+        <table>
+            <tr>
+                <th>綜合推薦分數</th>
+                <th>申請單位 / 聯絡人</th>
+                <th>需求地址</th>
+                <th>預估距離</th>
+                <th>急迫性 (1-5)</th>
+                <th>已等待時間</th>
+                <th>操作</th>
+            </tr>
+            
+            {% for result in matches %}
+            <tr class="{% if loop.first %}highlight{% endif %}">
+                <td style="color: red; font-size: 1.2em;">{{ result.score }} 分</td>
+                <td>{{ result.request.requester_name }}</td>
+                <td>{{ result.request.address }}</td>
+                <td>約 {{ result.distance }} km</td>
+                <td>{{ result.request.urgency }}</td>
+                <td>{{ result.hours_waiting }} 小時</td>
+                <td>
+                    <a href="/finish_request/{{ result.request.id }}" class="btn" onclick="return confirm('確定將物資分配給此單位並結案嗎？');">分配給他並結案</a>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="7">目前沒有需要「{{ donation.item_name }}」的未結案需求。</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+
+</body>
+</html>

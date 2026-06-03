@@ -5,6 +5,8 @@ import os
 from datetime import datetime 
 import io 
 from werkzeug.utils import secure_filename
+import math
+from datetime import datetime
 
 app = Flask(__name__)
 
@@ -49,9 +51,116 @@ class RequestItem(db.Model):
     # 紀錄是否已經被滿足 (預設為 False 代表還在等)
     is_fulfilled = db.Column(db.Boolean, default=False)
 
+# ✨ 新增：據點設定資料庫
+class Hub(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50), unique=True, nullable=False)  # 例如：南部據點
+    address = db.Column(db.String(200), nullable=False)          # 據點真實地址
+    base_distance = db.Column(db.Float, nullable=False)          # 該據點的模擬配送距離 (km)
+
 # 5. 在程式第一次執行時建立資料庫檔案
 with app.app_context():
     db.create_all()
+
+# --- 模擬距離計算的函式 ---
+def get_mock_distance(hub_name, address):
+    """
+    根據據點與地址的縣市，模擬出合理的距離 (公里)
+    實務上未來可擴充串接 Google Maps API
+    """
+    address = address or ""
+    
+    # 簡單的關鍵字判斷
+    if hub_name == "南部據點" and any(city in address for city in ["高雄", "台南", "屏東"]):
+        return 15.0  # 同區域，假設距離 15 公里 (例如送到大樹區)
+    elif hub_name == "北部據點" and any(city in address for city in ["台北", "新北", "基隆", "桃園"]):
+        return 20.0  
+    elif hub_name == "中部據點" and any(city in address for city in ["台中", "彰化", "南投", "苗栗"]):
+        return 18.0
+    elif hub_name == "東部據點" and any(city in address for city in ["花蓮", "台東"]):
+        return 25.0
+    
+    # 如果跨區，預設給一個較遠的距離
+    return 150.0
+
+# --- 配對演算法的路由 ---
+@app.route('/match/<int:donation_id>')
+def match_algorithm(donation_id):
+    # 抓出要處理的這筆捐贈物資
+    donation = Donation.query.get_or_404(donation_id)
+    
+    # 從資料庫找出所有「尚未結案」，而且「需要相同物資」的申請
+    # (例如捐贈輪椅，就只跟需要輪椅的申請配對)
+    open_requests = RequestItem.query.filter_by(
+        is_fulfilled=False, 
+        item_name=donation.item_name
+    ).all()
+    
+    match_results = []
+    
+    for req in open_requests:
+        # A. 計算距離 (不會是 0)
+        distance = get_mock_distance(donation.address, req.address)
+        
+        # B. 計算等待時間 (小時為單位)
+        time_diff = datetime.now() - req.timestamp
+        hours_waiting = time_diff.total_seconds() / 3600
+        
+        # C. 帶入你的演算法公式
+        # 注意：因為 1/distance 很小，而 hours_waiting 可能很大，這裡我幫你調整了權重比例，讓分數較平衡
+        w1, w2, w3 = 100, 10, 0.5 
+        score = (w1 * (1 / distance)) + (w2 * req.urgency) + (w3 * hours_waiting)
+        
+        # 將計算結果存入清單
+        match_results.append({
+            'request': req,
+            'distance': distance,
+            'hours_waiting': round(hours_waiting, 1),
+            'score': round(score, 2)
+        })
+        
+    # 根據演算法算出的 Score，由高到低進行排序
+    match_results = sorted(match_results, key=lambda x: x['score'], reverse=True)
+    
+    return render_template('match.html', donation=donation, matches=match_results)
+
+#--- 針對需求申請的配對演算法路由 ---
+@app.route('/match_request/<int:request_id>')
+def match_request_algorithm(request_id):
+    # 1. 抓出這筆急待處理的需求申請
+    req = RequestItem.query.get_or_404(request_id)
+    
+    # 2. 找出庫存中「名稱符合」的捐贈物資
+    available_donations = Donation.query.filter_by(
+        item_name=req.item_name
+    ).all()
+    
+    match_results = []
+    
+    # 計算等待時間 (小時為單位)
+    time_diff = datetime.now() - req.timestamp
+    hours_waiting = time_diff.total_seconds() / 3600
+    
+    for donation in available_donations:
+        # A. 計算距離 (呼叫我們剛剛寫的 get_mock_distance)
+        # 注意：你的 donation.address 其實存的就是據點名稱 (例如"南部據點")
+        distance = get_mock_distance(donation.address, req.address)
+        
+        # B. 帶入演算法公式
+        w1, w2, w3 = 100, 10, 0.5 
+        score = (w1 * (1 / distance)) + (w2 * req.urgency) + (w3 * hours_waiting)
+        
+        # 存入結果清單
+        match_results.append({
+            'donation': donation,
+            'distance': distance,
+            'score': round(score, 2)
+        })
+        
+    # 根據分數由高到低排序
+    match_results = sorted(match_results, key=lambda x: x['score'], reverse=True)
+    
+    return render_template('match_request.html', req=req, matches=match_results, waiting_hours=round(hours_waiting, 1))
 
 @app.route('/donations')
 def list_donations():
@@ -132,30 +241,37 @@ def delete_item(id):
     # 刪除後跳回管理頁面，並帶上密碼參數
     return redirect(url_for('admin_panel', password=pwd))
 
+#--- 模擬距離計算的函式 ---
+def get_mock_distance(hub_name, address):
+    # 去資料庫搜尋這個據點名稱
+    hub = Hub.query.filter_by(name=hub_name).first()
+    if hub:
+        return hub.base_distance  # 回傳後台設定的距離
+    return 99.0  # 找不到時的預設防呆值
 
 @app.route('/admin', methods=['GET'])
 def admin_panel():
-    # 1. 檢查密碼 (保留你的安全機制)
+    # 1. 檢查密碼
     if request.args.get('password') != '1234':
         return "密碼錯誤，拒絕存取！"
     
-    # 2. 獲取排序參數 (保留你的排序功能)
-    sort_type = request.args.get('sort', 'timestamp')
+    # 2. 抓取據點資料 (這行負責從資料庫拿資料)
+    hubs_data = Hub.query.all()
     
-    # 3. 根據參數決定【捐贈物資】的查詢方式 
-    # (小修改：把變數名稱 items 改成 donations，對應新的 admin.html)
+    # 3. 排序與抓取【捐贈物資】
+    sort_type = request.args.get('sort', 'timestamp')
     if sort_type == 'name':
         donations_data = Donation.query.order_by(Donation.donor_name).all()
     elif sort_type == 'item':
         donations_data = Donation.query.order_by(Donation.item_name).all()
-    else: # 預設依時間排序 (最新排在最上面)
+    else: 
         donations_data = Donation.query.order_by(Donation.timestamp.desc()).all()
         
-    # 4. ✨ 新增：抓取【需求申請】的資料，並優先處理最緊急的！
+    # 4. 抓取【需求申請】
     requests_data = RequestItem.query.order_by(RequestItem.urgency.desc(), RequestItem.timestamp.desc()).all()
         
-    # 5. 把兩包資料一起傳給 admin.html
-    return render_template('admin.html', donations=donations_data, requests=requests_data)
+    # 5. 【最關鍵的這一行】確保 hubs=hubs_data 有寫進去！
+    return render_template('admin.html', donations=donations_data, requests=requests_data, hubs=hubs_data)
 
 
 @app.route('/export_donations')
@@ -304,6 +420,43 @@ def finish_request(id):
     # 更新完後，導回需求清單頁面
     return redirect(url_for('list_requests'))
 
+# 處理工作人員修改據點資料的 POST 路由
+@app.route('/update_hub', methods=['POST'])
+def update_hub():
+    hub_id = request.form.get('hub_id')
+    new_address = request.form.get('address')
+    new_distance = float(request.form.get('base_distance', 10.0))
+    
+    hub = Hub.query.filter_by(id=hub_id).first()
+    if hub:    
+        hub.address = new_address
+        hub.base_distance = new_distance
+        db.session.commit()
+        
+    # 修改成功後，自動導回後台 (帶上密碼才不會被擋)
+    return redirect('/admin?password=1234')
+
+@app.route('/init_hubs')
+def init_hubs():
+    # 1. 確保資料庫表格有建立
+    db.create_all()
+    
+    # 2. 避免重複建立，先把舊的據點資料清空
+    Hub.query.delete()
+    
+    # 3. 寫入我們預設的五大據點
+    initial_hubs = [
+        Hub(name="南部據點", address="高雄市大樹區學城路一段1號", base_distance=10.0),
+        Hub(name="西部據點", address="台中市西屯區台灣大道", base_distance=25.5),
+        Hub(name="中部據點", address="南投縣埔里鎮中山路", base_distance=50.0),
+        Hub(name="北部據點", address="台北市大安區羅斯福路", base_distance=120.0),
+        Hub(name="東部據點", address="花蓮縣花蓮市中央路", base_distance=200.0)
+    ]
+    db.session.add_all(initial_hubs)
+    db.session.commit()
+    
+    return "✅ 據點初始化成功！請點擊這裡回到 <a href='/admin?password=1234'>管理員後台</a> 查看。"
+
 @app.route('/api/items')
 def get_items():
     items = Donation.query.all()
@@ -312,5 +465,8 @@ def get_items():
         "id": i.id, "item": i.item_name, "qty": i.quantity, "donor": i.donor_name
     } for i in items])
 
+# 確保資料庫表格都有被建立
+with app.app_context():
+    db.create_all()
 if __name__ == '__main__':
     app.run(debug=True)

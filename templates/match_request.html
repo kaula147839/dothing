@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>以需求為核心的智能媒合</title>
+    <style>
+        body { font-family: sans-serif; margin: 20px; background-color: #f0f2f5; }
+        .card { background-color: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: center; }
+        th { background-color: #ff9800; color: white; }
+        .highlight { background-color: #fff3cd; font-weight: bold; }
+        .btn { padding: 8px 15px; text-decoration: none; border-radius: 4px; color: white; background-color: #28a745; }
+    </style>
+</head>
+<body>
+
+    <a href="/admin?password=1234" style="text-decoration:none; color: #555;">⬅ 回到後台</a>
+
+    <div class="card" style="border-left: 5px solid #dc3545;">
+        <h2>🚨 待處理需求 (目標)</h2>
+        <p><strong>需求單位：</strong> {{ req.requester_name }}</p>
+        <p><strong>所需物資：</strong> {{ req.item_name }} (數量: {{ req.quantity }})</p>
+        <p><strong>送達地址：</strong> {{ req.address }}</p>
+        <p><strong>急迫性分數：</strong> {{ req.urgency }} 分 | <strong>已等待時間：</strong> {{ waiting_hours }} 小時</p>
+    </div>
+
+    <div class="card">
+        <h2>📦 系統推薦調用的物資 (依演算法分數排序)</h2>
+        
+        <table>
+            <tr>
+                <th>匹配總分</th>
+                <th>目前存放據點</th>
+                <th>預估運送距離</th>
+                <th>物資狀況</th>
+                <th>捐贈者</th>
+                <th>操作</th>
+            </tr>
+            
+            {% for result in matches %}
+            <tr class="{% if loop.first %}highlight{% endif %}">
+                <td style="color: red; font-size: 1.2em;">{{ result.score }} 分</td>
+                <td>{{ result.donation.address }}</td>
+                <td>約 {{ result.distance }} km</td>
+                <td>{{ result.donation.condition }}</td>
+                <td>{{ result.donation.donor_name }}</td>
+                <td>
+                    <a href="/finish_request/{{ req.id }}" class="btn" onclick="return confirm('確定要調用這筆物資，並將需求標記為結案嗎？');">✅ 調用此物資</a>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="6" style="padding: 20px;">系統內目前沒有「{{ req.item_name }}」的庫存捐贈物資。</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+
+</body>
+</html>
