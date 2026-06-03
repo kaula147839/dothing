@@ -20,8 +20,11 @@ class Donation(db.Model):
     item_name = db.Column(db.String(100), nullable=False)
     quantity = db.Column(db.Integer, nullable=False)
     donor_name = db.Column(db.String(100), nullable=False)
-    # 新增這行：記錄全新或二手
     condition = db.Column(db.String(10), nullable=False) 
+    # 新增這行：記錄地址
+    address = db.Column(db.String(200), nullable=False)
+    # 新增這行：記錄聯絡電話
+    phone = db.Column(db.String(20), nullable=False)
     timestamp = db.Column(db.DateTime, default=datetime.now)
 
 # 5. 在程式第一次執行時建立資料庫檔案
@@ -72,8 +75,12 @@ def donate():
             quantity=request.form.get('quantity'),
             donor_name=request.form.get('donor_name'),
             # 新增這行：抓取表單中的 condition 數值
-            condition=request.form.get('condition') 
-        )
+            condition=request.form.get('condition'),
+            # 新增這行：抓取表單中的地址資料
+            address=request.form.get('address'),
+            # 新增這行：抓取表單中的電話資料
+            phone=request.form.get('phone')
+            )
         db.session.add(new_item)
         db.session.commit()
         return redirect(url_for('list_items')) # 或 redirect(url_for('home'))
@@ -123,10 +130,12 @@ def export_excel():
     data = [{
         "ID": item.id,
         "物資名稱": item.item_name,
-        "物品狀況": item.condition,
         "數量": item.quantity,
         "捐贈者": item.donor_name,
         "捐贈時間": item.timestamp.strftime('%Y-%m-%d %H:%M'),
+        "物品狀況": item.condition,       
+        "捐贈地址": item.address, 
+        "聯絡電話": item.phone,
     } for item in items]
     df_all = pd.DataFrame(data)
     
@@ -150,6 +159,7 @@ def export_excel():
     
     output.seek(0)
     return send_file(output, download_name="donations_report.xlsx", as_attachment=True)
+
 @app.route('/api/items')
 def get_items():
     items = Donation.query.all()

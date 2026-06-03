@@ -8,13 +8,15 @@
 <body>
     <h1>管理員後台：物資清單維護</h1>
     <table border="1">
-        <tr>
+        <>
         <th>ID</th>
         <th><a href="/admin?sort=item&password={{ request.args.get('password') }}">物資名稱</a></th>
         <th>數量</th>
         <th><a href="/admin?sort=name&password={{ request.args.get('password') }}">捐贈者</a></th>
         <th><a href="/admin?sort=timestamp&password={{ request.args.get('password') }}">捐贈時間</a></th>
         <th>物品狀況</th>
+        <th>捐贈地址</th>
+        <th>聯絡電話</th>
         <th>操作</th>
     </tr>
         {% for item in items %}
@@ -25,6 +27,8 @@
         <td>{{ item.donor_name }}</td>
         <td>{{ item.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
         <td>{{ item.condition }}</td>
+        <td>{{ item.address }}</td>
+        <td>{{ item.phone }}</td>
         <td>
             <a href="/delete/{{ item.id }}?password={{ request.args.get('password') }}" 
             onclick="return confirm('確定要刪除嗎？')">刪除</a>

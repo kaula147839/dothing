@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>捐贈物資 - 慈ㄋ善媒合系統</title>
+    <title>捐贈物資 - 慈善媒合系統</title>
 </head>
 <body>
     <h1>登記捐贈物資</h1>
@@ -24,6 +24,14 @@
         <label>物品狀況：</label>
         <input type="radio" name="condition" value="全新" required> 全新
         <input type="radio" name="condition" value="二手" required> 二手
+    </div>
+    <div style="margin-top: 10px; margin-bottom: 10px;">
+        <label>捐贈地址：</label>
+        <input type="text" name="address" placeholder="請輸入完整地址 (例如：高雄市大樹區...)" required style="width: 250px;">
+    </div>
+    <div style="margin-top: 10px; margin-bottom: 10px;">
+        <label>聯絡電話：</label>
+        <input type="tel" name="phone" placeholder="例如：0912345678" required>
     </div>
 
     <script>
