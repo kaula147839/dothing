@@ -53,6 +53,7 @@ def list_items():
         query = query.filter(
             (Donation.donor_name.contains(search_query)) | 
             (Donation.item_name.contains(search_query))
+            (Donation.address.contains(search_query))
         )
     
     # 4. 再進行排序 (這時候 query 已經被過濾過了)
@@ -151,7 +152,7 @@ def export_excel():
         "捐贈者": item.donor_name,
         "捐贈時間": item.timestamp.strftime('%Y-%m-%d %H:%M'),
         "物品狀況": item.condition,       
-        "捐贈地址": item.address, 
+        "捐贈據點": item.address, 
         "聯絡電話": item.phone,
         # 這裡用一個簡單的 if 判斷式，如果有檔名就顯示檔名，沒有就顯示「無照片」
         "照片檔案": item.image_filename if item.image_filename else "無照片"

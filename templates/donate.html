@@ -26,8 +26,15 @@
         <input type="radio" name="condition" value="二手" required> 二手
     </div>
     <div style="margin-top: 10px; margin-bottom: 10px;">
-        <label>捐贈地址：</label>
-        <input type="text" name="address" placeholder="請輸入完整地址 (例如：高雄市大樹區...)" required style="width: 250px;">
+    <label>請選擇捐贈據點：</label>
+    <select name="address" required style="padding: 5px;">
+            <option value="">-- 請選擇據點 --</option>
+            <option value="北部據點">北部據點</option>
+            <option value="中部據點">中部據點</option>
+            <option value="南部據點">南部據點</option>
+            <option value="西部據點">西部據點</option>
+            <option value="東部據點">東部據點</option>
+        </select>
     </div>
     <div style="margin-top: 10px; margin-bottom: 10px;">
         <label>聯絡電話：</label>
