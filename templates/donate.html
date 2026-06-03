@@ -20,6 +20,18 @@
         <label>請輸入其他物資名稱：</label>
         <input type="text" name="other_item" id="other_item_input">
     </div>
+    <script>
+    function checkOther(value) {
+        var otherDiv = document.getElementById('other_input_div');
+        if (value === '其他') {
+            otherDiv.style.display = 'block'; // 顯示輸入框
+            document.getElementById('other_item_input').required = true; // 設為必填
+        } else {
+            otherDiv.style.display = 'none'; // 隱藏
+            document.getElementById('other_item_input').required = false; // 取消必填
+        }
+    }
+    </script>
     <div style="margin-top: 10px; margin-bottom: 10px;">
         <label>物品狀況：</label>
         <input type="radio" name="condition" value="全新" required> 全新
@@ -40,19 +52,6 @@
         <label>聯絡電話：</label>
         <input type="tel" name="phone" placeholder="例如：0912345678" required>
     </div>
-
-    <script>
-    function checkOther(value) {
-        var otherDiv = document.getElementById('other_input_div');
-        if (value === '其他') {
-            otherDiv.style.display = 'block'; // 顯示輸入框
-            document.getElementById('other_item_input').required = true; // 設為必填
-        } else {
-            otherDiv.style.display = 'none'; // 隱藏
-            document.getElementById('other_item_input').required = false; // 取消必填
-        }
-    }
-    </script>
         <label>數量：</label>
         <input type="number" name="quantity" required><br><br>
         

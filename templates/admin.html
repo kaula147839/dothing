@@ -2,46 +2,114 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>管理員後台</title>
-    
+    <title>系統後台管理 - 慈善媒合平台</title>
+    <style>
+        body { font-family: sans-serif; margin: 20px; background-color: #f0f2f5; }
+        .container { background-color: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 30px; }
+        h1 { color: #333; border-bottom: 2px solid #333; padding-bottom: 10px; }
+        h2 { color: #555; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        th { background-color: #343a40; color: white; }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+        tr:hover { background-color: #f1f1f1; }
+        
+        /* 按鈕樣式 */
+        .btn { padding: 6px 12px; text-decoration: none; border-radius: 4px; color: white; font-size: 14px; display: inline-block; }
+        .btn-danger { background-color: #dc3545; }
+        .btn-success { background-color: #28a745; }
+        .btn-secondary { background-color: #6c757d; margin-bottom: 20px; }
+        
+        /* 狀態文字樣式 */
+        .urgent-5 { color: red; font-weight: bold; }
+        .urgent-4 { color: orange; font-weight: bold; }
+        .status-done { color: green; font-weight: bold; }
+    </style>
 </head>
 <body>
-    <h1>管理員後台：物資清單維護</h1>
-    <table border="1">
-        <>
-        <th>ID</th>
-        <th><a href="/admin?sort=item&password={{ request.args.get('password') }}">物資名稱</a></th>
-        <th>數量</th>
-        <th><a href="/admin?sort=name&password={{ request.args.get('password') }}">捐贈者</a></th>
-        <th><a href="/admin?sort=timestamp&password={{ request.args.get('password') }}">捐贈時間</a></th>
-        <th>物品狀況</th>
-        <th>捐贈據點</th>
-        <th>聯絡電話</th>
-        <th>操作</th>
-    </tr>
-        {% for item in items %}
-    <tr>
-        <td>{{ item.id }}</td>
-        <td>{{ item.item_name }}</td>
-        <td>{{ item.quantity }}</td>
-        <td>{{ item.donor_name }}</td>
-        <td>{{ item.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
-        <td>{{ item.condition }}</td>
-        <td>{{ item.address }}</td>
-        <td>{{ item.phone }}</td>
-        <td>
-            <a href="/delete/{{ item.id }}?password={{ request.args.get('password') }}" 
-            onclick="return confirm('確定要刪除嗎？')">刪除</a>
-        </td>
-    </tr>
-    {% endfor %}
-    </table>
-    <div style="margin-top: 20px;">
-        <a href="/export" style="background-color: #28a745; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
-            匯出 Excel 報表
-        </a>
+
+    <a href="/" class="btn btn-secondary">⬅ 回到系統首頁</a>
+    
+    <h1>🛡️ 系統管理員後台 (Admin Dashboard)</h1>
+
+    <div class="container">
+        <h2>🎁 捐贈物資管理 (可分配資源)</h2>
+        <a href="/export_donations" class="btn btn-success" style="margin-bottom: 10px;">匯出 Excel 報表</a>
+        
+        <table>
+            <tr>
+                <th>ID</th>
+                <th>物資名稱</th>
+                <th>數量</th>
+                <th>捐贈者</th>
+                <th>捐贈據點</th>
+                <th>物品狀況</th>
+                <th>捐贈時間</th>
+                <th>管理操作</th>
+            </tr>
+            
+            {% for item in donations %}
+            <tr>
+                <td>{{ item.id }}</td>
+                <td><strong>{{ item.item_name }}</strong></td>
+                <td>{{ item.quantity }}</td>
+                <td>{{ item.donor_name }}</td>
+                <td>{{ item.address }}</td>
+                <td>{{ item.condition }}</td>
+                <td>{{ item.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
+                <td>
+                    <a href="/delete_donation/{{ item.id }}" class="btn btn-danger" onclick="return confirm('確定要永久刪除這筆捐贈紀錄嗎？');">刪除</a>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="8" style="text-align:center;">目前沒有任何捐贈資料</td>
+            </tr>
+            {% endfor %}
+        </table>
     </div>
-    <br>
-    <a href="/">回到首頁</a>
+
+    <div class="container">
+        <h2>📝 需求申請管理 (待處理任務)</h2>
+        <a href="/export_requests" class="btn btn-success" style="margin-bottom: 10px;">匯出 Excel 報表</a>
+        <table>
+            <tr>
+                <th>ID</th>
+                <th>需求物資</th>
+                <th>數量</th>
+                <th>申請單位 / 聯絡人</th>
+                <th>需求地址</th>
+                <th>急迫性</th>
+                <th>申請時間</th>
+                <th>狀態 / 管理</th>
+            </tr>
+            
+            {% for req in requests %}
+            <tr>
+                <td>{{ req.id }}</td>
+                <td><strong>{{ req.item_name }}</strong></td>
+                <td>{{ req.quantity }}</td>
+                <td>{{ req.requester_name }}</td>
+                <td>{{ req.address }}</td>
+                <td class="urgent-{{ req.urgency }}">
+                    {{ req.urgency }} {% if req.urgency == 5 %} 🚨 {% endif %}
+                </td>
+                <td>{{ req.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
+                <td>
+                    {% if req.is_fulfilled %}
+                        <span class="status-done">✅ 已結案</span>
+                    {% else %}
+                        <a href="/finish_request/{{ req.id }}" class="btn btn-success" onclick="return confirm('確認此需求已透過演算法或人工媒合完畢，將標記為結案？');">標記結案</a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="8" style="text-align:center;">目前沒有任何需求申請</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+
 </body>
 </html>

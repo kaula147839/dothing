@@ -53,8 +53,8 @@ class RequestItem(db.Model):
 with app.app_context():
     db.create_all()
 
-@app.route('/list')
-def list_items():
+@app.route('/donations')
+def list_donations():
     # 1. 取得參數
     search_query = request.args.get('q', '')
     sort_type = request.args.get('sort', 'timestamp')
@@ -78,7 +78,7 @@ def list_items():
     else:
         items = query.order_by(Donation.timestamp.desc()).all()
         
-    return render_template('list.html', items=items, query=search_query, sort=sort_type)
+    return render_template('donations.html', items=items, query=search_query, sort=sort_type)
 
 @app.route('/')
 def home():
@@ -115,7 +115,7 @@ def donate():
             )
         db.session.add(new_item)
         db.session.commit()
-        return redirect(url_for('list_items')) # 或 redirect(url_for('home'))
+        return redirect(url_for('list_donations')) # 或 redirect(url_for('home'))
         
     return render_template('donate.html')
 
@@ -133,29 +133,33 @@ def delete_item(id):
     return redirect(url_for('admin_panel', password=pwd))
 
 
-# 新增一個刪除功能
 @app.route('/admin', methods=['GET'])
 def admin_panel():
-    # 1. 檢查密碼
+    # 1. 檢查密碼 (保留你的安全機制)
     if request.args.get('password') != '1234':
         return "密碼錯誤，拒絕存取！"
     
-    # 2. 獲取排序參數
+    # 2. 獲取排序參數 (保留你的排序功能)
     sort_type = request.args.get('sort', 'timestamp')
     
-    # 3. 根據參數決定查詢方式
+    # 3. 根據參數決定【捐贈物資】的查詢方式 
+    # (小修改：把變數名稱 items 改成 donations，對應新的 admin.html)
     if sort_type == 'name':
-        items = Donation.query.order_by(Donation.donor_name).all()
+        donations_data = Donation.query.order_by(Donation.donor_name).all()
     elif sort_type == 'item':
-        items = Donation.query.order_by(Donation.item_name).all()
+        donations_data = Donation.query.order_by(Donation.item_name).all()
     else: # 預設依時間排序 (最新排在最上面)
-        items = Donation.query.order_by(Donation.timestamp.desc()).all()
+        donations_data = Donation.query.order_by(Donation.timestamp.desc()).all()
         
-    return render_template('admin.html', items=items)
+    # 4. ✨ 新增：抓取【需求申請】的資料，並優先處理最緊急的！
+    requests_data = RequestItem.query.order_by(RequestItem.urgency.desc(), RequestItem.timestamp.desc()).all()
+        
+    # 5. 把兩包資料一起傳給 admin.html
+    return render_template('admin.html', donations=donations_data, requests=requests_data)
 
 
-@app.route('/export')
-def export_excel():
+@app.route('/export_donations')
+def export_donations_excel():
     items = Donation.query.all()
     
     # 1. 建立一個大的 DataFrame
@@ -194,11 +198,63 @@ def export_excel():
     output.seek(0)
     return send_file(output, download_name="donations_report.xlsx", as_attachment=True)
 
+@app.route('/export_requests')
+def export_requests_excel():
+    # 改成抓取需求清單的資料庫
+    req_items = RequestItem.query.all()
+    
+    # 1. 建立一個大的 DataFrame (對應需求的欄位)
+    data = [{
+        "ID": req.id,
+        "申請單位 / 聯絡人": req.requester_name,
+        "需求物資": req.item_name,
+        "數量": req.quantity,
+        "需求地址": req.address,
+        "急迫性 (1-5)": req.urgency,
+        "處理狀態": "✅ 已結案" if req.is_fulfilled else "⏳ 等待媒合中",
+        "申請時間": req.timestamp.strftime('%Y-%m-%d %H:%M')
+    } for req in req_items]
+    
+    df_all = pd.DataFrame(data)
+    
+    # 2. 準備在記憶體中建立 Excel
+    output = io.BytesIO()
+    
+    # 3. 使用 ExcelWriter 來寫入多個 Sheet
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        
+        # 【防呆機制】：如果目前沒有任何需求，就只印出空表頭，避免下面的迴圈報錯
+        if df_all.empty:
+            df_all.to_excel(writer, sheet_name='全部需求資料', index=False)
+        else:
+            # Sheet 1: 所有資料總表
+            df_all.to_excel(writer, sheet_name='全部需求資料', index=False)
+            
+            # Sheet 2, 3, ... : 依照需求物資名稱分組
+            # 取得所有獨特的需求物資名稱
+            unique_items = df_all['需求物資'].unique()
+            for item_name in unique_items:
+                # 篩選出該物資的資料
+                df_subset = df_all[df_all['需求物資'] == item_name]
+                # 寫入對應名稱的 Sheet (Excel 的 sheet 名稱限制 31 字以內)
+                # 如果使用者填了很長的「其他」物資名稱，這裡會自動截斷防止報錯
+                writer_name = str(item_name)[:31]
+                df_subset.to_excel(writer, sheet_name=writer_name, index=False)
+    
+    output.seek(0)
+    # 下載的檔名改成 requests_report.xlsx
+    return send_file(output, download_name="requests_report.xlsx", as_attachment=True)
+
 @app.route('/request', methods=['GET', 'POST'])
 def make_request():
     if request.method == 'POST':
+        # 1. 先抓取物資名稱，判斷是不是選了「其他」
+        item = request.form.get('item_name')
+        if item == '其他':
+            item = request.form.get('other_item') # 如果是，就改抓隱藏輸入框的字
+            
         new_request = RequestItem(
-            item_name=request.form.get('item_name'),
+            item_name=item,  # 這裡改成剛剛處理好的 item 變數
             quantity=request.form.get('quantity'),
             requester_name=request.form.get('requester_name'),
             address=request.form.get('address'),
@@ -207,9 +263,46 @@ def make_request():
         )
         db.session.add(new_request)
         db.session.commit()
-        return redirect(url_for('home')) # 假設送出後回首頁
         
+        # 確認一下你的首頁路由函式名稱是不是 home，如果是的話這行沒問題
+        return redirect(url_for('home')) 
+        
+    # 2. 這裡要改成單數的 request.html (表單頁面)
     return render_template('request.html')
+
+@app.route('/requests')
+def list_requests():
+    # 從資料庫抓出所有申請，並且「依照急迫性由高到低」排序，如果急迫性一樣則照時間排
+    req_items = RequestItem.query.order_by(RequestItem.urgency.desc(), RequestItem.timestamp.desc()).all()
+    
+    # 這裡呼叫的是複數的 requests.html (清單頁面)
+    return render_template('requests.html', requests=req_items)
+
+# --- 管理員功能：刪除捐贈物資 ---
+@app.route('/delete_donation/<int:id>')
+def delete_donation(id):
+    # 根據 ID 找到那筆資料，如果找不到就回傳 404 錯誤
+    item_to_delete = Donation.query.get_or_404(id)
+    try:
+        db.session.delete(item_to_delete)
+        db.session.commit()
+    except:
+        pass # 實務上這裡可以加上錯誤處理
+    # 刪除完後，重新導回捐贈清單頁面
+    return redirect(url_for('list_donations'))
+
+# --- 管理員功能：更新需求狀態 (結案/刪除) ---
+@app.route('/finish_request/<int:id>')
+def finish_request(id):
+    req = RequestItem.query.get_or_404(id)
+    try:
+        # 將狀態改為 True (已完成)
+        req.is_fulfilled = True
+        db.session.commit()
+    except:
+        pass
+    # 更新完後，導回需求清單頁面
+    return redirect(url_for('list_requests'))
 
 @app.route('/api/items')
 def get_items():

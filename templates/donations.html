@@ -17,20 +17,20 @@
     <h1>目前物資清單</h1>
 
     <div class="search-area">
-        <form action="/list" method="GET">
+        <form action="/donations" method="GET">
             <input type="text" name="q" placeholder="輸入搜尋關鍵字..." value="{{ query }}">
             <button type="submit">搜尋</button>
-            <a href="/list">清除搜尋</a>
+            <a href="/donations">清除搜尋</a>
         </form>
     </div>
 
     <table>
         <tr>
             <th>ID</th>
-            <th><a href="/list?sort=item&q={{ query }}">物資名稱</a></th>
+            <th><a href="/donations?sort=item&q={{ query }}">物資名稱</a></th>
             <th>數量</th>
-            <th><a href="/list?sort=name&q={{ query }}">捐贈者</a></th>
-            <th><a href="/list?sort=timestamp&q={{ query }}">捐贈時間</a></th>
+            <th><a href="/donations?sort=name&q={{ query }}">捐贈者</a></th>
+            <th><a href="/donations?sort=timestamp&q={{ query }}">捐贈時間</a></th>
             <th>物品狀況</th>
             <th>捐贈據點</th>
             <th>聯絡電話</th>    
@@ -57,7 +57,7 @@
         </tr>
         {% else %}
         <tr>
-            <td colspan="6" style="text-align:center;">目前沒有找到符合的物資紀錄</td>
+            <td colspan="9" style="text-align:center;">目前沒有找到符合的物資紀錄</td>
         </tr>
         {% endfor %}
     </table>

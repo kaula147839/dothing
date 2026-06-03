@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>需求清單 - 慈善媒合系統</title>
+    <style>
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #f4f4f4; }
+        tr:hover { background-color: #f9f9f9; }
+        
+        /* 針對不同急迫性設定顏色 */
+        .urgent-5 { color: red; font-weight: bold; }
+        .urgent-4 { color: orange; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>需求清單 (等待媒合)</h1>
+
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>申請單位 / 聯絡人</th>
+            <th>需求物資</th>
+            <th>數量</th>
+            <th>需求地址</th>
+            <th>急迫性</th>
+            <th>申請時間</th>
+            <th>狀態 / 管理</th> 
+        </tr>
+        
+        {% for req in requests %}
+        <tr>
+            <td>{{ req.id }}</td>
+            <td>{{ req.requester_name }}</td>
+            <td><strong>{{ req.item_name }}</strong></td>
+            <td>{{ req.quantity }}</td>
+            <td>{{ req.address }}</td>
+            
+            <td class="urgent-{{ req.urgency }}">
+                {{ req.urgency }} 
+                {% if req.urgency == 5 %} 🚨 {% endif %}
+            </td>
+            
+            <td>{{ req.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
+            
+            <td>
+                {% if req.is_fulfilled %}
+                    <span style="color: green; font-weight: bold;">✅ 已完成</span>
+                {% else %}
+                    <span style="color: #ff9800; font-weight: bold;">⏳ 等待媒合中</span>
+                {% endif %}
+            </td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="8" style="text-align:center;">目前沒有任何需求申請</td>
+        </tr>
+        {% endfor %}
+    </table>
+    <br>
+    <a href="/">回到首頁</a>
+</body>
+</html>
