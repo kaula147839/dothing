@@ -39,7 +39,6 @@
             <tr style="background-color: #6f42c1;">
                 <th>據點名稱</th>
                 <th>目前設定地址</th>
-                <th>預設配送距離 (km)</th>
                 <th>操作</th>
             </tr>
             
@@ -51,9 +50,6 @@
                     <td><strong>{{ hub.name }}</strong></td>
                     <td>
                         <input type="text" name="address" value="{{ hub.address }}" style="width: 90%; padding: 4px;">
-                    </td>
-                    <td>
-                        <input type="number" name="base_distance" value="{{ hub.base_distance }}" step="0.1" min="1" style="width: 70px; padding: 4px;">
                     </td>
                     <td>
                         <button type="submit" class="btn" style="background-color: #6f42c1;">💾 儲存修改</button>

@@ -7,9 +7,13 @@ import io
 from werkzeug.utils import secure_filename
 import math
 from datetime import datetime
+import random
+# 這兩行來載入免費地圖 API
+from geopy.geocoders import ArcGIS
+from geopy.distance import geodesic
 
 app = Flask(__name__)
-
+geolocator = ArcGIS()
 # 2. 設定資料庫檔案的路徑
 basedir = os.path.abspath(os.path.dirname(__file__))
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'charity.db')
@@ -56,32 +60,53 @@ class Hub(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), unique=True, nullable=False)  # 例如：南部據點
     address = db.Column(db.String(200), nullable=False)          # 據點真實地址
-    base_distance = db.Column(db.Float, nullable=False)          # 該據點的模擬配送距離 (km)
 
 # 5. 在程式第一次執行時建立資料庫檔案
 with app.app_context():
     db.create_all()
 
 # --- 模擬距離計算的函式 ---
-def get_mock_distance(hub_name, address):
+def get_real_distance(hub_name, req_address):
     """
-    根據據點與地址的縣市，模擬出合理的距離 (公里)
-    實務上未來可擴充串接 Google Maps API
+    【ArcGIS 商用級地圖連線版】
+    使用強大的 ArcGIS 引擎，精準解析台灣複雜地址！
     """
-    address = address or ""
-    
-    # 簡單的關鍵字判斷
-    if hub_name == "南部據點" and any(city in address for city in ["高雄", "台南", "屏東"]):
-        return 15.0  # 同區域，假設距離 15 公里 (例如送到大樹區)
-    elif hub_name == "北部據點" and any(city in address for city in ["台北", "新北", "基隆", "桃園"]):
-        return 20.0  
-    elif hub_name == "中部據點" and any(city in address for city in ["台中", "彰化", "南投", "苗栗"]):
-        return 18.0
-    elif hub_name == "東部據點" and any(city in address for city in ["花蓮", "台東"]):
-        return 25.0
-    
-    # 如果跨區，預設給一個較遠的距離
-    return 150.0
+    hub = Hub.query.filter_by(name=hub_name).first()
+    hub_address = hub.address if hub else ""
+    req_address = str(req_address) if req_address else ""
+
+    try:
+        # 直接呼叫 ArcGIS 幫我們找座標
+        location_hub = geolocator.geocode(hub_address, timeout=10)
+        location_req = geolocator.geocode(req_address, timeout=10)
+
+        # 如果成功拿到座標，計算精準直線距離
+        if location_hub and location_req:
+            coords_hub = (location_hub.latitude, location_hub.longitude)
+            coords_req = (location_req.latitude, location_req.longitude)
+            real_dist = geodesic(coords_hub, coords_req).kilometers
+            return round(real_dist, 1)
+            
+    except Exception as e:
+        print(f"ArcGIS API 查詢失敗: {e}")
+
+    # =========================================================
+    # 萬一連 ArcGIS 都查不到 (例如地址亂填)，最後的保底機制
+    # =========================================================
+    if "南投" in req_address: req_zone = "中部"
+    elif any(city in req_address for city in ["苗栗", "台中", "彰化", "雲林", "嘉義"]): req_zone = "西部"
+    elif any(city in req_address for city in ["台南", "高雄", "屏東"]): req_zone = "南部"
+    elif any(city in req_address for city in ["台北", "新北", "基隆", "桃園", "新竹"]): req_zone = "北部"
+    elif any(city in req_address for city in ["宜蘭", "花蓮", "台東"]): req_zone = "東部"
+    else: req_zone = "未知"
+
+    if "南部" in hub_name: return 25.0 if req_zone == "南部" else 150.0
+    elif "西部" in hub_name: return 25.0 if req_zone == "西部" else 100.0
+    elif "中部" in hub_name: return 25.0 if req_zone == "中部" else 120.0
+    elif "北部" in hub_name: return 25.0 if req_zone == "北部" else 150.0
+    elif "東部" in hub_name: return 25.0 if req_zone == "東部" else 200.0
+
+    return 99.9  # 絕對防呆值
 
 # --- 配對演算法的路由 ---
 @app.route('/match/<int:donation_id>')
@@ -100,7 +125,7 @@ def match_algorithm(donation_id):
     
     for req in open_requests:
         # A. 計算距離 (不會是 0)
-        distance = get_mock_distance(donation.address, req.address)
+        distance = get_real_distance(donation.address, req.address)
         
         # B. 計算等待時間 (小時為單位)
         time_diff = datetime.now() - req.timestamp
@@ -142,9 +167,9 @@ def match_request_algorithm(request_id):
     hours_waiting = time_diff.total_seconds() / 3600
     
     for donation in available_donations:
-        # A. 計算距離 (呼叫我們剛剛寫的 get_mock_distance)
+        # A. 計算距離 (呼叫我們剛剛寫的 get_real_distance)
         # 注意：你的 donation.address 其實存的就是據點名稱 (例如"南部據點")
-        distance = get_mock_distance(donation.address, req.address)
+        distance = get_real_distance(donation.address, req.address)
         
         # B. 帶入演算法公式
         w1, w2, w3 = 100, 10, 0.5 
@@ -241,13 +266,6 @@ def delete_item(id):
     # 刪除後跳回管理頁面，並帶上密碼參數
     return redirect(url_for('admin_panel', password=pwd))
 
-#--- 模擬距離計算的函式 ---
-def get_mock_distance(hub_name, address):
-    # 去資料庫搜尋這個據點名稱
-    hub = Hub.query.filter_by(name=hub_name).first()
-    if hub:
-        return hub.base_distance  # 回傳後台設定的距離
-    return 99.0  # 找不到時的預設防呆值
 
 @app.route('/admin', methods=['GET'])
 def admin_panel():
@@ -425,37 +443,56 @@ def finish_request(id):
 def update_hub():
     hub_id = request.form.get('hub_id')
     new_address = request.form.get('address')
-    new_distance = float(request.form.get('base_distance', 10.0))
     
     hub = Hub.query.filter_by(id=hub_id).first()
     if hub:    
         hub.address = new_address
-        hub.base_distance = new_distance
         db.session.commit()
         
     # 修改成功後，自動導回後台 (帶上密碼才不會被擋)
     return redirect('/admin?password=1234')
 
-@app.route('/init_hubs')
-def init_hubs():
-    # 1. 確保資料庫表格有建立
+@app.route('/init_data')
+def init_data():
+    # 1. 核彈級清空，重建乾淨的表
+    db.drop_all()
     db.create_all()
     
-    # 2. 避免重複建立，先把舊的據點資料清空
-    Hub.query.delete()
-    
-    # 3. 寫入我們預設的五大據點
+    # 2. 建立五大據點
     initial_hubs = [
-        Hub(name="南部據點", address="高雄市大樹區學城路一段1號", base_distance=10.0),
-        Hub(name="西部據點", address="台中市西屯區台灣大道", base_distance=25.5),
-        Hub(name="中部據點", address="南投縣埔里鎮中山路", base_distance=50.0),
-        Hub(name="北部據點", address="台北市大安區羅斯福路", base_distance=120.0),
-        Hub(name="東部據點", address="花蓮縣花蓮市中央路", base_distance=200.0)
+        Hub(name="南部據點", address="高雄市大樹區學城路一段1號"),
+        Hub(name="西部據點", address="台中市西屯區台灣大道"),
+        Hub(name="中部據點", address="南投縣埔里鎮中山路"),
+        Hub(name="北部據點", address="台北市大安區羅斯福路"),
+        Hub(name="東部據點", address="花蓮縣花蓮市中央路")
     ]
     db.session.add_all(initial_hubs)
+    
+    # 3. 建立測試用【庫存物資】(✨ 這裡有電話！)
+    initial_donations = [
+        Donation(item_name="成人尿布", quantity=10, condition="全新", donor_name="善心人A", address="南部據點", phone="0911111111"),
+        Donation(item_name="成人尿布", quantity=5, condition="全新", donor_name="善心人B", address="西部據點", phone="0922222222"),
+        Donation(item_name="輪椅", quantity=1, condition="二手", donor_name="李大明", address="中部據點", phone="0933333333"),
+        Donation(item_name="輪椅", quantity=2, condition="全新", donor_name="張阿姨", address="北部據點", phone="0944444444"),
+        Donation(item_name="血壓計", quantity=3, condition="全新", donor_name="陳建國", address="東部據點", phone="0955555555"),
+        Donation(item_name="血壓計", quantity=5, condition="二手", donor_name="王先生", address="南部據點", phone="0966666666")
+    ]
+    db.session.add_all(initial_donations)
+    
+    # 4. 建立測試用【需求申請】(✨ 這裡沒有電話！)
+    initial_requests = [
+        RequestItem(item_name="成人尿布", quantity=2, requester_name="彰化吳老先生", address="彰化縣彰化市介壽里建興路1號", urgency=4),
+        RequestItem(item_name="輪椅", quantity=1, requester_name="南投仁愛之家", address="南投縣仁愛鄉大同村", urgency=5),
+        RequestItem(item_name="輪椅", quantity=1, requester_name="桃園李爺爺", address="桃園市中壢區", urgency=3),
+        RequestItem(item_name="血壓計", quantity=1, requester_name="台北林奶奶", address="台北市信義區", urgency=2),
+        RequestItem(item_name="血壓計", quantity=2, requester_name="高雄長照中心", address="高雄市三民區", urgency=5)
+    ]
+    db.session.add_all(initial_requests)
+    
+    # 5. 一次把所有新資料寫入資料庫！
     db.session.commit()
     
-    return "✅ 據點初始化成功！請點擊這裡回到 <a href='/admin?password=1234'>管理員後台</a> 查看。"
+    return "✅ 據點、物資、需求資料已全數初始化成功！請點擊這裡回到 <a href='/admin?password=1234'>管理員後台</a> 查看。"
 
 @app.route('/api/items')
 def get_items():
