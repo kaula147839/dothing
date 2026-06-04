@@ -48,7 +48,7 @@
                 <td>{{ result.request.urgency }}</td>
                 <td>{{ result.hours_waiting }} 小時</td>
                 <td>
-                    <a href="/finish_request/{{ result.request.id }}" class="btn" onclick="return confirm('確定將物資分配給此單位並結案嗎？');">分配給他並結案</a>
+                        <a href="{{ url_for('allocate_match', request_id=match.request.id, donation_id=donation.id) }}" class="btn btn-success">✅ 調用此物資</a>
                 </td>
             </tr>
             {% else %}

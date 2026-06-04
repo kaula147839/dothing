@@ -141,6 +141,43 @@
             {% endfor %}
         </table>
     </div>
-
+<div class="card" style="margin-top: 40px;">        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h2 style="margin: 0;">✅ 歷史資源分配紀錄 (已結案任務)</h2>
+            <a href="/export_history" class="btn" style="background-color: #17a2b8; font-weight: bold; padding: 10px 20px; color: white; text-decoration: none; border-radius: 5px;">
+                📥 匯出 Excel 紀錄
+            </a>
+        </div>
+        
+        <p style="color: #666; font-size: 0.9em; margin-top: 10px;">下方為系統成功配對並順利結案的需求申請紀錄：</p>
+        
+        <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+            <thead>
+                <tr style="background-color: #6c757d; color: white;">
+                    <th style="padding: 10px; border: 1px solid #ddd;">ID</th>
+                    <th style="padding: 10px; border: 1px solid #ddd;">受贈單位 / 聯絡人</th>
+                    <th style="padding: 10px; border: 1px solid #ddd;">獲配物資</th>
+                    <th style="padding: 10px; border: 1px solid #ddd;">送達地址</th>
+                    <th style="padding: 10px; border: 1px solid #ddd;">結案狀態</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for req in completed_requests %}
+                <tr style="background-color: #f8f9fa; text-align: center;">
+                    <td style="padding: 10px; border: 1px solid #ddd;">{{ req.id }}</td>
+                    <td style="padding: 10px; border: 1px solid #ddd; font-weight: bold;">{{ req.requester_name }}</td>
+                    <td style="padding: 10px; border: 1px solid #ddd; color: #28a745; font-weight: bold;">{{ req.item_name }}</td>
+                    <td style="padding: 10px; border: 1px solid #ddd; text-align: left;">{{ req.address }}</td>
+                    <td style="padding: 10px; border: 1px solid #ddd;">
+                        <span style="background-color: #d4edda; color: #155724; padding: 3px 8px; border-radius: 3px; font-size: 0.9em;">✓ 順利送達</span>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5" style="padding: 30px; text-align: center; color: #999;">目前尚無已完成的分配紀錄。</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </body>
 </html>

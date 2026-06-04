@@ -187,6 +187,44 @@ def match_request_algorithm(request_id):
     
     return render_template('match_request.html', req=req, matches=match_results, waiting_hours=round(hours_waiting, 1))
 
+# --- 真正執行配對並更新資料庫的路由 ---
+@app.route('/allocate_match/<int:request_id>/<int:donation_id>')
+def allocate_match(request_id, donation_id):
+    req = RequestItem.query.get_or_404(request_id)
+    donation = Donation.query.get_or_404(donation_id)
+    
+    if donation.quantity > req.quantity:
+        # 情況 A：庫存 > 需求 
+        donation.quantity -= req.quantity  
+        req.is_fulfilled = True  # ✨ 不刪除了！把需求單標記為「已結案」
+        
+    elif donation.quantity == req.quantity:
+        # 情況 B：庫存 = 需求 
+        db.session.delete(donation)      
+        req.is_fulfilled = True  # ✨ 不刪除了！把需求單標記為「已結案」
+        
+    else:
+        # 情況 C：庫存 < 需求 
+        req.quantity -= donation.quantity 
+        db.session.delete(donation)      
+        
+    db.session.commit()
+    return redirect('/admin?password=1234')
+
+#--- 顯示已結案的需求清單 ---
+@app.route('/history')
+def request_history():
+    # 專門把「已結案」的需求單撈出來
+    completed_requests = RequestItem.query.filter_by(is_fulfilled=True).all()
+    
+    # 這裡你可以先暫時印在畫面上測試，確認資料有留下來
+    result_text = "<h2>✅ 已完成的需求清單：</h2><hr>"
+    for req in completed_requests:
+        result_text += f"<p>單位：{req.requester_name} | 獲得物資：{req.item_name} (數量: 滿編) | 送達地址：{req.address}</p>"
+    
+    result_text += "<br><a href='/admin?password=1234'>返回後台</a>"
+    return result_text
+
 @app.route('/donations')
 def list_donations():
     # 1. 取得參數
@@ -266,14 +304,13 @@ def delete_item(id):
     # 刪除後跳回管理頁面，並帶上密碼參數
     return redirect(url_for('admin_panel', password=pwd))
 
-
 @app.route('/admin', methods=['GET'])
 def admin_panel():
     # 1. 檢查密碼
     if request.args.get('password') != '1234':
         return "密碼錯誤，拒絕存取！"
     
-    # 2. 抓取據點資料 (這行負責從資料庫拿資料)
+    # 2. 抓取據點資料 
     hubs_data = Hub.query.all()
     
     # 3. 排序與抓取【捐贈物資】
@@ -285,13 +322,22 @@ def admin_panel():
     else: 
         donations_data = Donation.query.order_by(Donation.timestamp.desc()).all()
         
-    # 4. 抓取【需求申請】
-    requests_data = RequestItem.query.order_by(RequestItem.urgency.desc(), RequestItem.timestamp.desc()).all()
+    # 4. ✨ 分類抓取【需求申請】✨
+    # A. 待處理清單 (只抓 is_fulfilled=False，並保留你原本的急迫性排序)
+    pending_requests = RequestItem.query.filter_by(is_fulfilled=False).order_by(RequestItem.urgency.desc(), RequestItem.timestamp.desc()).all()
+    
+    # B. 已完成清單 (只抓 is_fulfilled=True，依完成時間排序)
+    completed_requests = RequestItem.query.filter_by(is_fulfilled=True).order_by(RequestItem.timestamp.desc()).all()
         
-    # 5. 【最關鍵的這一行】確保 hubs=hubs_data 有寫進去！
-    return render_template('admin.html', donations=donations_data, requests=requests_data, hubs=hubs_data)
+    # 5. 確保所有資料都有打包送給前端！
+    # 注意：原本的 requests 變成了 pending_requests，並且新增了 completed_requests
+    return render_template('admin.html', 
+                           donations=donations_data, 
+                           requests=pending_requests, 
+                           hubs=hubs_data,
+                           completed_requests=completed_requests)
 
-
+#--- 匯出 Excel 的路由 ---
 @app.route('/export_donations')
 def export_donations_excel():
     items = Donation.query.all()
@@ -378,6 +424,50 @@ def export_requests_excel():
     output.seek(0)
     # 下載的檔名改成 requests_report.xlsx
     return send_file(output, download_name="requests_report.xlsx", as_attachment=True)
+
+# --- 新增一個專門匯出「已結案需求」的 Excel 路由，讓管理員可以專門下載歷史紀錄 ---
+@app.route('/export_history')
+def export_history_excel():
+    # 1. 撈出所有已結案的需求 (依照時間新到舊排序)
+    completed_requests = RequestItem.query.filter_by(is_fulfilled=True).order_by(RequestItem.timestamp.desc()).all()
+    
+    # ⚡ 防呆機制：如果根本沒有歷史紀錄，就回傳提示，避免 Pandas 處理空資料報錯
+    if not completed_requests:
+        return "目前還沒有已結案的歷史紀錄可以匯出喔！<br><a href='/admin?password=1234'>返回後台</a>"
+    
+    # 2. 建立資料字典給 Pandas
+    data = [{
+        "紀錄編號": req.id,
+        "受贈單位 / 聯絡人": req.requester_name,
+        "獲配物資": req.item_name,
+        "數量": req.quantity,
+        "送達地址": req.address,
+        "急迫性 (滿分5)": req.urgency,
+        "建立時間": req.timestamp.strftime('%Y-%m-%d %H:%M')
+    } for req in completed_requests]
+    
+    df_all = pd.DataFrame(data)
+    
+    # 3. 準備在記憶體中建立 Excel
+    output = io.BytesIO()
+    
+    # 4. 使用 ExcelWriter 寫入 (保留你原本超讚的多 Sheet 分類功能)
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        # Sheet 1: 所有歷史紀錄總表
+        df_all.to_excel(writer, sheet_name='全部結案紀錄', index=False)
+        
+        # Sheet 2, 3, ... : 依照獲配物資名稱分組
+        unique_items = df_all['獲配物資'].unique()
+        for item_name in unique_items:
+            # 篩選出該物資的紀錄
+            df_subset = df_all[df_all['獲配物資'] == item_name]
+            # Excel sheet 名稱限制 31 字以內
+            writer_name = str(item_name)[:31] 
+            df_subset.to_excel(writer, sheet_name=writer_name, index=False)
+    
+    output.seek(0)
+    # 下載的檔名改成 history_report
+    return send_file(output, download_name="history_report.xlsx", as_attachment=True)
 
 @app.route('/request', methods=['GET', 'POST'])
 def make_request():

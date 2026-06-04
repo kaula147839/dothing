@@ -46,7 +46,7 @@
                 <td>{{ result.donation.condition }}</td>
                 <td>{{ result.donation.donor_name }}</td>
                 <td>
-                    <a href="/finish_request/{{ req.id }}" class="btn" onclick="return confirm('確定要調用這筆物資，並將需求標記為結案嗎？');">✅ 調用此物資</a>
+                    <a href="{{ url_for('allocate_match', request_id=req.id, donation_id=result.donation.id) }}" class="btn btn-success">✅ 調用此物資</a>
                 </td>
             </tr>
             {% else %}
