@@ -35,6 +35,7 @@
             <th>捐贈據點</th>
             <th>聯絡電話</th>    
             <th>照片</th>
+            <th>備註</th>
         </tr>
         
         {% for item in items %}
@@ -54,10 +55,17 @@
                     <span style="color: gray;">無照片</span>
                 {% endif %}
             </td>
+            <td>
+                {% if item.remarks %}
+                    {{ item.remarks }}
+                {% else %}
+                    <span style="color: #ccc;">無</span>
+                {% endif %}
+            </td>
         </tr>
         {% else %}
         <tr>
-            <td colspan="9" style="text-align:center;">目前沒有找到符合的物資紀錄</td>
+            <td colspan="10" style="text-align:center;">目前沒有找到符合的物資紀錄</td>
         </tr>
         {% endfor %}
     </table>

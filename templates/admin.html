@@ -71,7 +71,7 @@
                 <th>捐贈者</th>
                 <th>捐贈據點</th>
                 <th>物品狀況</th>
-                <th>捐贈時間</th>
+                <th>備註</th> <th>照片</th> <th>捐贈時間</th>
                 <th>管理操作</th>
             </tr>
             
@@ -83,6 +83,23 @@
                 <td>{{ item.donor_name }}</td>
                 <td>{{ item.address }}</td>
                 <td>{{ item.condition }}</td>
+                
+                <td>
+                    {% if item.remarks %}
+                        {{ item.remarks }}
+                    {% else %}
+                        <span style="color: #ccc;">—</span>
+                    {% endif %}
+                </td>
+
+                <td>
+                    {% if item.image_filename %}
+                        <img src="{{ url_for('static', filename='uploads/' + item.image_filename) }}" alt="物資照片" style="max-width: 80px; max-height: 80px; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                    {% else %}
+                        <span style="color: gray; font-size: 0.9em;">無照片</span>
+                    {% endif %}
+                </td>
+
                 <td>{{ item.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
                 <td>
                     <a href="/match/{{ item.id }}" class="btn" style="background-color: #17a2b8; margin-right: 5px;">🤖 分配此物資</a>
@@ -92,7 +109,7 @@
             </tr>
             {% else %}
             <tr>
-                <td colspan="8" style="text-align:center;">目前沒有任何捐贈資料</td>
+                <td colspan="10" style="text-align:center;">目前沒有任何捐贈資料</td>
             </tr>
             {% endfor %}
         </table>

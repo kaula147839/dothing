@@ -41,6 +41,7 @@ class Donation(db.Model):
     image_filename = db.Column(db.String(200), nullable=True)
     timestamp = db.Column(db.DateTime, default=datetime.now)
 
+
 class RequestItem(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     item_name = db.Column(db.String(100), nullable=False) # 需要什麼物資
@@ -265,29 +266,35 @@ def donate():
         if item == '其他':
             item = request.form.get('other_item')
             
-        # 新增：處理照片上傳的邏輯 
+        # 處理照片上傳的邏輯 
         photo = request.files.get('photo')
         filename = None # 預設為沒有照片
         if photo and photo.filename != '':
-            # 過濾檔名確保安全
-            filename = secure_filename(photo.filename)
-            # 存檔到 static/uploads/ 裡面
+            # 💡 聰明重新命名大法：抓取副檔名 (例如 .jpg 或 .png)
+            import os
+            import time
+            ext = os.path.splitext(photo.filename)[1] 
+            
+            # 用當前時間的數字當作新檔名 (例如 1717567200.jpg)，保證不重複且沒有中文問題！
+            filename = f"{int(time.time())}{ext}"
+            
+            # 存檔到指定的資料夾
             photo.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
 
+        # 建立資料庫物件
         new_item = Donation(
             item_name=item,
             quantity=request.form.get('quantity'),
             donor_name=request.form.get('donor_name'),
-            # 新增這行：抓取表單中的 condition 數值
             condition=request.form.get('condition'),
-            # 新增這行：抓取表單中的地址資料
             address=request.form.get('address'),
-            # 新增這行：抓取表單中的電話資料
-            phone=request.form.get('phone')
-            )
+            phone=request.form.get('phone'),
+            image_filename=filename, # ✨【關鍵修復】把圖片檔名乖乖寫入資料庫！
+            remarks=request.form.get('remarks') # ✨【新增】抓取表單中的備註資料
+        )
         db.session.add(new_item)
         db.session.commit()
-        return redirect(url_for('list_donations')) # 或 redirect(url_for('home'))
+        return redirect(url_for('list_donations'))
         
     return render_template('donate.html')
 
@@ -380,10 +387,10 @@ def export_donations_excel():
 
 @app.route('/export_requests')
 def export_requests_excel():
-    # 改成抓取需求清單的資料庫
-    req_items = RequestItem.query.all()
+    # ⚡ 關鍵修改：只抓取尚未結案 (is_fulfilled=False) 的需求清單
+    req_items = RequestItem.query.filter_by(is_fulfilled=False).all()
     
-    # 1. 建立一個大的 DataFrame (對應需求的欄位)
+    # 1. 建立一個大的 DataFrame
     data = [{
         "ID": req.id,
         "申請單位 / 聯絡人": req.requester_name,
@@ -391,7 +398,7 @@ def export_requests_excel():
         "數量": req.quantity,
         "需求地址": req.address,
         "急迫性 (1-5)": req.urgency,
-        "處理狀態": "✅ 已結案" if req.is_fulfilled else "⏳ 等待媒合中",
+        "處理狀態": "⏳ 等待媒合中",  # 這裡直接寫死，因為抓出來的肯定都還沒結案！
         "申請時間": req.timestamp.strftime('%Y-%m-%d %H:%M')
     } for req in req_items]
     
@@ -403,28 +410,23 @@ def export_requests_excel():
     # 3. 使用 ExcelWriter 來寫入多個 Sheet
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
         
-        # 【防呆機制】：如果目前沒有任何需求，就只印出空表頭，避免下面的迴圈報錯
+        # 【防呆機制】：如果目前沒有任何需求，就只印出空表頭
         if df_all.empty:
-            df_all.to_excel(writer, sheet_name='全部需求資料', index=False)
+            df_all.to_excel(writer, sheet_name='待處理需求資料', index=False)
         else:
             # Sheet 1: 所有資料總表
-            df_all.to_excel(writer, sheet_name='全部需求資料', index=False)
+            df_all.to_excel(writer, sheet_name='待處理需求資料', index=False)
             
             # Sheet 2, 3, ... : 依照需求物資名稱分組
-            # 取得所有獨特的需求物資名稱
             unique_items = df_all['需求物資'].unique()
             for item_name in unique_items:
-                # 篩選出該物資的資料
                 df_subset = df_all[df_all['需求物資'] == item_name]
-                # 寫入對應名稱的 Sheet (Excel 的 sheet 名稱限制 31 字以內)
-                # 如果使用者填了很長的「其他」物資名稱，這裡會自動截斷防止報錯
                 writer_name = str(item_name)[:31]
                 df_subset.to_excel(writer, sheet_name=writer_name, index=False)
     
     output.seek(0)
-    # 下載的檔名改成 requests_report.xlsx
+    # 匯出檔名不變，還是 requests_report.xlsx
     return send_file(output, download_name="requests_report.xlsx", as_attachment=True)
-
 # --- 新增一個專門匯出「已結案需求」的 Excel 路由，讓管理員可以專門下載歷史紀錄 ---
 @app.route('/export_history')
 def export_history_excel():
