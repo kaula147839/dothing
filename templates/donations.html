@@ -2,76 +2,237 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>物資捐贈清單</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>物資捐贈清單 - 慈善媒合系統</title>
     <style>
-        /* 簡單的美化一下表格，讓視覺更清楚 */
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
-        th { background-color: #f4f4f4; }
-        tr:hover { background-color: #f9f9f9; }
-        .search-area { margin-bottom: 20px; padding: 15px; background: #eee; }
+        /* 整體網頁背景與字體 */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            padding: 40px 20px;
+        }
+
+        /* 寬版資料卡片設計 */
+        .data-card {
+            background-color: white;
+            padding: 30px 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            width: 100%;
+            max-width: 1100px; /* 表格需要比較寬的空間 */
+            border-top: 5px solid #28a745; /* 綠色主題 */
+            overflow-x: auto; /* 手機版表格防爆版 */
+        }
+
+        h1 {
+            color: #2c3e50;
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* 現代化搜尋區塊 */
+        .search-area {
+            background: #f8f9fa;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            border: 1px solid #e9ecef;
+        }
+
+        .search-area form {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .search-area input[type="text"] {
+            flex-grow: 1;
+            padding: 10px 15px;
+            border: 1px solid #ced4da;
+            border-radius: 5px;
+            font-size: 1em;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+
+        .search-area input[type="text"]:focus {
+            border-color: #28a745;
+            outline: none;
+            box-shadow: 0 0 5px rgba(40, 167, 69, 0.2);
+        }
+
+        .btn-search {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+
+        .btn-search:hover { background-color: #218838; }
+
+        .btn-clear {
+            background-color: #6c757d;
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-weight: bold;
+            display: inline-flex;
+            align-items: center;
+            transition: background-color 0.3s;
+        }
+
+        .btn-clear:hover { background-color: #5a6268; }
+
+        /* 精美表格樣式 */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.95em;
+        }
+
+        th, td {
+            border-bottom: 1px solid #dee2e6;
+            padding: 12px 15px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #e9ecef;
+            color: #495057;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        /* 表頭排序連結美化 */
+        th a {
+            color: #28a745;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        th a:hover {
+            color: #1e7e34;
+            text-decoration: underline;
+        }
+
+        tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        /* 照片縮圖美化 */
+        .item-photo {
+            max-width: 80px;
+            max-height: 80px;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            object-fit: cover;
+        }
+
+        /* 返回首頁連結 */
+        .back-link {
+            display: inline-block;
+            margin-top: 25px;
+            color: #6c757d;
+            text-decoration: none;
+            font-size: 0.95em;
+            transition: color 0.3s;
+        }
+
+        .back-link:hover {
+            color: #343a40;
+            text-decoration: underline;
+        }
     </style>
-    
 </head>
 <body>
-    <h1>目前物資清單</h1>
 
-    <div class="search-area">
-        <form action="/donations" method="GET">
-            <input type="text" name="q" placeholder="輸入搜尋關鍵字..." value="{{ query }}">
-            <button type="submit">搜尋</button>
-            <a href="/donations">清除搜尋</a>
-        </form>
+    <div class="data-card">
+        <h1>📦 目前物資清單</h1>
+
+        <div class="search-area">
+            <form action="/donations" method="GET">
+                <input type="text" name="q" placeholder="請輸入物資名稱、據點或捐贈者關鍵字..." value="{{ query }}">
+                <button type="submit" class="btn-search">🔍 搜尋</button>
+                <a href="/donations" class="btn-clear">✖ 清除</a>
+            </form>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th><a href="/donations?sort=item&q={{ query }}">物資名稱 ↕</a></th>
+                    <th>數量</th>
+                    <th><a href="/donations?sort=name&q={{ query }}">捐贈者 ↕</a></th>
+                    <th><a href="/donations?sort=timestamp&q={{ query }}">捐贈時間 ↕</a></th>
+                    <th>物品狀況</th>
+                    <th>捐贈據點</th>
+                    <th>聯絡電話</th>    
+                    <th>照片</th>
+                    <th>備註</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                <tr>
+                    <td><span style="color: #6c757d; font-weight: bold;">#{{ item.id }}</span></td>
+                    <td style="font-weight: bold; color: #28a745;">{{ item.item_name }}</td>
+                    <td>{{ item.quantity }}</td>
+                    <td>{{ item.donor_name }}</td>
+                    <td style="color: #666; font-size: 0.9em;">{{ item.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td>
+                        <span style="background-color: {% if item.condition == '全新' %}#d4edda{% else %}#e2e3e5{% endif %}; 
+                                     color: {% if item.condition == '全新' %}#155724{% else %}#383d41{% endif %}; 
+                                     padding: 3px 8px; border-radius: 4px; font-size: 0.85em;">
+                            {{ item.condition }}
+                        </span>
+                    </td>
+                    <td>{{ item.address }}</td>
+                    <td>{{ item.phone }}</td>
+                    <td>
+                        {% if item.image_filename %}
+                            <img src="{{ url_for('static', filename='uploads/' + item.image_filename) }}" alt="物資照片" class="item-photo">
+                        {% else %}
+                            <span style="color: #adb5bd; font-size: 0.85em;">無照片</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if item.remarks %}
+                            <span style="color: #555;">{{ item.remarks }}</span>
+                        {% else %}
+                            <span style="color: #ced4da;">—</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="10" style="text-align:center; padding: 40px; color: #6c757d;">
+                        <div style="font-size: 2em; margin-bottom: 10px;">📭</div>
+                        目前沒有找到符合的物資紀錄
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 
-    <table>
-        <tr>
-            <th>ID</th>
-            <th><a href="/donations?sort=item&q={{ query }}">物資名稱</a></th>
-            <th>數量</th>
-            <th><a href="/donations?sort=name&q={{ query }}">捐贈者</a></th>
-            <th><a href="/donations?sort=timestamp&q={{ query }}">捐贈時間</a></th>
-            <th>物品狀況</th>
-            <th>捐贈據點</th>
-            <th>聯絡電話</th>    
-            <th>照片</th>
-            <th>備註</th>
-        </tr>
-        
-        {% for item in items %}
-        <tr>
-            <td>{{ item.id }}</td>
-            <td>{{ item.item_name }}</td>
-            <td>{{ item.quantity }}</td>
-            <td>{{ item.donor_name }}</td>
-            <td>{{ item.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
-            <td>{{ item.condition }}</td>
-            <td>{{ item.address }}</td>
-            <td>{{ item.phone }}</td>
-            <td>
-                {% if item.image_filename %}
-                    <img src="{{ url_for('static', filename='uploads/' + item.image_filename) }}" alt="物資照片" style="max-width: 100px; max-height: 100px;">
-                {% else %}
-                    <span style="color: gray;">無照片</span>
-                {% endif %}
-            </td>
-            <td>
-                {% if item.remarks %}
-                    {{ item.remarks }}
-                {% else %}
-                    <span style="color: #ccc;">無</span>
-                {% endif %}
-            </td>
-        </tr>
-        {% else %}
-        <tr>
-            <td colspan="10" style="text-align:center;">目前沒有找到符合的物資紀錄</td>
-        </tr>
-        {% endfor %}
-    </table>
+    <a href="/" class="back-link">⬅ 回到首頁</a>
 
-    <br>
-    <a href="/">回到首頁</a>
     <script>
         // 設定每 5 秒 (5000 毫秒) 自動重新整理一次
         setInterval(function(){
