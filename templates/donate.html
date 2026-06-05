@@ -2,73 +2,267 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>捐贈物資 - 慈善媒合系統</title>
+    <style>
+        /* 整體網頁背景與字體 */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            padding: 40px 20px;
+        }
+
+        /* 核心表單卡片設計 */
+        .form-card {
+            background-color: white;
+            padding: 30px 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            width: 100%;
+            max-width: 450px;
+            border-top: 5px solid #28a745;
+        }
+
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-top: 0;
+            margin-bottom: 25px;
+            font-size: 1.6em;
+        }
+
+        /* 表單群組 (讓每個輸入框之間有漂亮的間距) */
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #495057;
+            font-size: 0.95em;
+        }
+
+        /* 輸入框通用樣式 */
+        input[type="text"],
+        input[type="number"],
+        input[type="tel"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ced4da;
+            border-radius: 5px;
+            box-sizing: border-box; /* 確保 padding 不會撐破寬度 */
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+
+        /* 輸入框被點擊時的高光效果 */
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        input[type="tel"]:focus,
+        select:focus,
+        textarea:focus {
+            border-color: #28a745;
+            outline: none;
+            box-shadow: 0 0 5px rgba(40, 167, 69, 0.2);
+        }
+
+        /* --- ✨ 核心修改：物品狀況單選按鈕的排樣式 ✨ --- */
+        .radio-section {
+            margin-bottom: 18px;
+        }
+
+        /* 移除原本 label 預設的 margin-bottom，並讓它占滿寬度 */
+        .radio-section > label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #495057;
+            font-size: 0.95em;
+        }
+
+        /* 物品狀況選項的包裹 div，使用 Flexbox 讓選項水平排列並對齊 */
+        .radio-wrapper {
+            display: flex;
+            gap: 25px; /* 每個選項之間的水平間距 */
+            align-items: center; /* 垂直居中對齊 */
+        }
+
+        /* 為每個 radio 選項 (包含按鈕和文字) 添加包裹 label，方便整體選取和控制樣式 */
+        .radio-option {
+            display: flex;
+            align-items: center;
+            font-weight: normal; /* 文字不加粗 */
+            cursor: pointer;
+            margin-bottom: 0;
+            color: #333;
+        }
+
+        /* label 文字通用樣式 */
+        .radio-option label {
+            display: inline-block;
+            margin-bottom: 0; /* 移除 label 預設的 margin-bottom */
+            font-weight: normal;
+            cursor: pointer;
+            font-size: 1em;
+            color: inherit;
+        }
+
+        /* label 內的 radio 按鈕本身通用樣式 */
+        .radio-option input[type="radio"] {
+            margin: 0 8px 0 0; /* 按鈕與文字之間的間距 */
+            width: auto; /* 移除通用樣式中的 100% 寬度 */
+            cursor: pointer;
+        }
+        /* --- ✨ 修改結束 ✨ --- */
+
+        /* 照片上傳美化 */
+        input[type="file"] {
+            padding: 10px;
+            background-color: #f8f9fa;
+            border: 1px dashed #ced4da;
+            border-radius: 5px;
+            width: 100%;
+            box-sizing: border-box;
+            cursor: pointer;
+            color: #6c757d;
+        }
+
+        /* 滿版送出按鈕 */
+        .submit-btn {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 12px;
+            width: 100%;
+            font-size: 1.1em;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin-top: 10px;
+        }
+
+        .submit-btn:hover {
+            background-color: #218838;
+        }
+
+        /* 返回首頁連結 */
+        .back-link {
+            display: inline-block;
+            margin-top: 20px;
+            color: #6c757d;
+            text-decoration: none;
+            font-size: 0.9em;
+            transition: color 0.3s;
+        }
+
+        .back-link:hover {
+            color: #343a40;
+            text-decoration: underline;
+        }
+    </style>
 </head>
 <body>
-    <h1>登記捐贈物資</h1>
-    <!-- action="/donate" 代表按下按鈕後會把資料傳給 app.py 的 /donate 路徑 -->
-    <form action="/donate" method="POST" enctype="multipart/form-data">
-        <label>物資名稱：</label>
-    <select name="item_name" id="item_select" onchange="checkOther(this.value)" required>
-        <option value="">--請選擇物資--</option>
-        <option value="輪椅">輪椅</option>
-        <option value="血壓計">血壓計</option>
-        <option value="成人尿布">成人尿布</option>
-        <option value="其他">其他</option>
-    </select>
-    <div id="other_input_div" style="display:none; margin-top: 5px;">
-        <label>請輸入其他物資名稱：</label>
-        <input type="text" name="other_item" id="other_item_input">
+
+    <div class="form-card">
+        <h1>🎁 登記捐贈物資</h1>
+        
+        <form action="/donate" method="POST" enctype="multipart/form-data">
+            
+            <div class="form-group">
+                <label>物資名稱：</label>
+                <select name="item_name" id="item_select" onchange="checkOther(this.value)" required>
+                    <option value="">-- 請選擇物資 --</option>
+                    <option value="輪椅">輪椅</option>
+                    <option value="血壓計">血壓計</option>
+                    <option value="成人尿布">成人尿布</option>
+                    <option value="其他">其他</option>
+                </select>
+            </div>
+
+            <div class="form-group" id="other_input_div" style="display:none;">
+                <label>請輸入其他物資名稱：</label>
+                <input type="text" name="other_item" id="other_item_input" placeholder="例如：拐杖、護具...">
+            </div>
+
+            <div class="radio-section">
+                <label>物品狀況：</label>
+                <div class="radio-wrapper">
+                    <div class="radio-option">
+                        <input type="radio" id="condition_new" name="condition" value="全新" required>
+                        <label for="condition_new">全新</label>
+                    </div>
+                    
+                    <div class="radio-option">
+                        <input type="radio" id="condition_used" name="condition" value="二手" required>
+                        <label for="condition_used">二手</label>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>請選擇捐贈據點：</label>
+                <select name="address" required>
+                    <option value="">-- 請選擇據點 --</option>
+                    <option value="北部據點">北部據點</option>
+                    <option value="中部據點">中部據點</option>
+                    <option value="南部據點">南部據點</option>
+                    <option value="西部據點">西部據點</option>
+                    <option value="東部據點">東部據點</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>聯絡電話：</label>
+                <input type="tel" name="phone" placeholder="例如：0912345678" required>
+            </div>
+            
+            <div class="form-group">
+                <label>數量：</label>
+                <input type="number" name="quantity" placeholder="請輸入數量" required>
+            </div>
+            
+            <div class="form-group">
+                <label>捐贈者姓名：</label>
+                <input type="text" name="donor_name" placeholder="請輸入姓名或單位" required>
+            </div>
+            
+            <div class="form-group">
+                <label>物資照片 (可現場拍攝或上傳)：</label>
+                <input type="file" name="photo" accept="image/*" capture="environment">
+            </div>
+
+            <div class="form-group">
+                <label>備註 (選填)：</label>
+                <textarea name="remarks" rows="3" placeholder="例如：平日白天方便聯絡、物品有些許刮痕...等"></textarea>
+            </div>    
+            
+            <button type="submit" class="submit-btn">✅ 確認送出</button>
+        </form>
     </div>
+
+    <a href="/" class="back-link">⬅ 回到首頁</a>
+
     <script>
     function checkOther(value) {
         var otherDiv = document.getElementById('other_input_div');
         if (value === '其他') {
-            otherDiv.style.display = 'block'; // 顯示輸入框
-            document.getElementById('other_item_input').required = true; // 設為必填
+            otherDiv.style.display = 'block'; 
+            document.getElementById('other_item_input').required = true; 
         } else {
-            otherDiv.style.display = 'none'; // 隱藏
-            document.getElementById('other_item_input').required = false; // 取消必填
+            otherDiv.style.display = 'none'; 
+            document.getElementById('other_item_input').required = false; 
         }
     }
     </script>
-    <div style="margin-top: 10px; margin-bottom: 10px;">
-        <label>物品狀況：</label>
-        <input type="radio" name="condition" value="全新" required> 全新
-        <input type="radio" name="condition" value="二手" required> 二手
-    </div>
-    <div style="margin-top: 10px; margin-bottom: 10px;">
-    <label>請選擇捐贈據點：</label>
-    <select name="address" required style="padding: 5px;">
-            <option value="">-- 請選擇據點 --</option>
-            <option value="北部據點">北部據點</option>
-            <option value="中部據點">中部據點</option>
-            <option value="南部據點">南部據點</option>
-            <option value="西部據點">西部據點</option>
-            <option value="東部據點">東部據點</option>
-        </select>
-    </div>
-    <div style="margin-top: 10px; margin-bottom: 10px;">
-        <label>聯絡電話：</label>
-        <input type="tel" name="phone" placeholder="例如：0912345678" required>
-    </div>
-        <label>數量：</label>
-        <input type="number" name="quantity" required><br><br>
-        
-        <label>捐贈者姓名：</label>
-        <input type="text" name="donor_name" required><br><br>
-        
-        <div style="margin-top: 10px; margin-bottom: 10px;">
-            <label>物資照片 (可現場拍攝或上傳)：</label>
-            <input type="file" name="photo" accept="image/*" capture="environment">
-        </div>
-    <div style="margin-bottom: 15px;">
-        <label style="font-weight: bold;">備註 (選填)：</label>
-        <textarea name="remarks" rows="3" style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc;" placeholder="例如：平日白天方便聯絡、物品有些許刮痕...等"></textarea>
-    </div>    
-        <button type="submit">確認送出</button>
-    </form>
-    <br>
-    <a href="/">回到首頁</a>
+
 </body>
 </html>

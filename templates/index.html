@@ -2,28 +2,212 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>慈善物資媒合系統</title>
+    <style>
+        /* 整體網頁背景與字體 */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        /* 核心主視覺容器 */
+        .main-container {
+            background-color: white;
+            padding: 50px 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            width: 100%;
+            max-width: 800px;
+            text-align: center;
+            border-top: 6px solid #17a2b8;
+        }
+
+        h1 {
+            color: #2c3e50;
+            margin-top: 0;
+            font-size: 2.4em;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #6c757d;
+            font-size: 1.1em;
+            margin-bottom: 40px;
+        }
+
+        /* 功能卡片網格佈局 (CSS Grid) */
+        .action-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        /* 每一張功能卡片的樣式 */
+        .action-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 30px 20px;
+            border-radius: 10px;
+            text-decoration: none;
+            color: white;
+            font-weight: bold;
+            font-size: 1.2em;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        /* 滑鼠移過去的浮游特效 */
+        .action-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        }
+
+        /* 卡片大圖示 */
+        .card-icon {
+            font-size: 2.5em;
+            margin-bottom: 15px;
+        }
+
+        /* 四個按鈕各自的漸層色彩 */
+        .btn-donate { background: linear-gradient(135deg, #007bff, #00c6ff); }
+        .btn-request { background: linear-gradient(135deg, #ff9800, #ffb74d); }
+        .btn-list-donations { background: linear-gradient(135deg, #28a745, #20c997); }
+        .btn-list-requests { background: linear-gradient(135deg, #d35400, #e67e22); }
+
+        /* 分隔線 */
+        hr {
+            border: 0;
+            height: 1px;
+            background: #e9ecef;
+            margin: 30px 0;
+        }
+
+        /* 管理員區塊樣式 */
+        .admin-toggle-btn {
+            background-color: transparent;
+            color: #adb5bd;
+            border: 1px solid #ced4da;
+            padding: 8px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.3s;
+        }
+
+        .admin-toggle-btn:hover {
+            background-color: #f8f9fa;
+            color: #495057;
+            border-color: #adb5bd;
+        }
+
+        .login-form-container {
+            display: none; /* 預設隱藏 */
+            margin-top: 20px;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .login-form {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .login-form input[type="password"] {
+            padding: 10px 15px;
+            border: 1px solid #ced4da;
+            border-radius: 5px;
+            outline: none;
+            width: 200px;
+            transition: border-color 0.3s;
+        }
+
+        .login-form input[type="password"]:focus {
+            border-color: #343a40;
+        }
+
+        .login-form button {
+            padding: 10px 20px;
+            background-color: #343a40;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+
+        .login-form button:hover {
+            background-color: #23272b;
+        }
+    </style>
 </head>
 <body>
-    <h1>慈善物資媒合平台</h1>
-    <p>歡迎使用，您可以選擇以下動作：</p>
-    
-    <ul>
-        <li><a href="/donate" style="display: inline-block; padding: 10px 20px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px; margin: 5px;">我要捐贈物資</a></li>
-        <li><a href="/request" style="display: inline-block; padding: 10px 20px; background-color: #ff9800; color: white; text-decoration: none; border-radius: 5px; margin: 5px;">我要申請物資</a></li>
-        <li><a href="/donations" style="display: inline-block; padding: 10px 20px; background-color: #28a745; color: white; text-decoration: none; border-radius: 5px; margin: 5px;">查看物資清單</a></li>
-        <li><a href="/requests" style="display: inline-block; padding: 10px 20px; background-color: #d35400; color: white; text-decoration: none; border-radius: 5px; margin: 5px;">查看需求清單</a></li>
-    </ul>
 
-    <hr> <div id="admin-login-area">
-        <button onclick="document.getElementById('login-form').style.display='block'">管理員登入</button>
+    <div class="main-container">
+        <h1>🤝 慈善物資媒合平台</h1>
+        <p class="subtitle">讓閒置資源找到最需要的人，請選擇您要進行的服務</p>
         
-        <div id="login-form" style="display:none; margin-top: 10px;">
-            <form action="/admin" method="GET">
-                <input type="password" name="password" placeholder="請輸入管理密碼" required>
-                <button type="submit">確認</button>
-            </form>
+        <div class="action-grid">
+            <a href="/donate" class="action-card btn-donate">
+                <span class="card-icon">🎁</span>
+                我要捐贈物資
+            </a>
+            
+            <a href="/request" class="action-card btn-request">
+                <span class="card-icon">🙋‍♂️</span>
+                我要申請物資
+            </a>
+            
+            <a href="/donations" class="action-card btn-list-donations">
+                <span class="card-icon">📦</span>
+                查看物資清單
+            </a>
+            
+            <a href="/requests" class="action-card btn-list-requests">
+                <span class="card-icon">📋</span>
+                查看需求清單
+            </a>
+        </div>
+
+        <hr>
+
+        <div id="admin-login-area">
+            <button class="admin-toggle-btn" onclick="toggleAdminForm()">⚙️ 管理員登入</button>
+            
+            <div id="login-form-container" class="login-form-container">
+                <form action="/admin" method="GET" class="login-form">
+                    <input type="password" name="password" placeholder="請輸入管理密碼" required>
+                    <button type="submit">登入</button>
+                </form>
+            </div>
         </div>
     </div>
-    </body>
+
+    <script>
+        // 讓登入框點擊時可以優雅地滑出/隱藏
+        function toggleAdminForm() {
+            var formContainer = document.getElementById('login-form-container');
+            if (formContainer.style.display === 'block') {
+                formContainer.style.display = 'none';
+            } else {
+                formContainer.style.display = 'block';
+            }
+        }
+    </script>
+</body>
 </html>

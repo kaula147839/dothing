@@ -2,66 +2,178 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>申請物資 - 慈善媒合系統</title>
+    <style>
+        /* 整體網頁背景與字體 */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            padding: 40px 20px;
+        }
+
+        /* 核心表單卡片設計 (橘色主題) */
+        .form-card {
+            background-color: white;
+            padding: 30px 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            width: 100%;
+            max-width: 450px;
+            border-top: 5px solid #ff9800; /* 申請頁面使用專屬橘色 */
+        }
+
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-top: 0;
+            margin-bottom: 25px;
+            font-size: 1.6em;
+        }
+
+        /* 表單群組 */
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #495057;
+            font-size: 0.95em;
+        }
+
+        /* 輸入框通用樣式 */
+        input[type="text"],
+        input[type="number"],
+        select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ced4da;
+            border-radius: 5px;
+            box-sizing: border-box;
+            font-size: 1em;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+
+        /* 輸入框被點擊時的橘色高光效果 */
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        select:focus {
+            border-color: #ff9800;
+            outline: none;
+            box-shadow: 0 0 5px rgba(255, 152, 0, 0.2);
+        }
+
+        /* 滿版橘色送出按鈕 */
+        .submit-btn {
+            background-color: #ff9800;
+            color: white;
+            border: none;
+            padding: 12px;
+            width: 100%;
+            font-size: 1.1em;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin-top: 10px;
+        }
+
+        .submit-btn:hover {
+            background-color: #e68a00;
+        }
+
+        /* 返回首頁連結 */
+        .back-link {
+            display: inline-block;
+            margin-top: 20px;
+            color: #6c757d;
+            text-decoration: none;
+            font-size: 0.9em;
+            transition: color 0.3s;
+        }
+
+        .back-link:hover {
+            color: #343a40;
+            text-decoration: underline;
+        }
+    </style>
 </head>
 <body>
-    <h1>登記申請物資</h1>
-    <!-- action="/request" 代表按下按鈕後會把資料傳給 app.py 的 /request 路徑 -->
-    <form action="/request" method="POST" style="line-height: 2;">
-        <label>物資名稱：</label>
-    <select name="item_name" id="item_select" onchange="checkOther(this.value)" required>
-        <option value="">--請選擇物資--</option>
-        <option value="輪椅">輪椅</option>
-        <option value="血壓計">血壓計</option>
-        <option value="成人尿布">成人尿布</option>
-        <option value="其他">其他</option>
-    </select>
-    <div id="other_input_div" style="display:none; margin-top: 5px;">
-        <label>請輸入其他物資名稱：</label>
-        <input type="text" name="other_item" id="other_item_input">
+
+    <div class="form-card">
+        <h1>🙋‍♂️ 登記申請物資</h1>
+        
+        <form action="/request" method="POST">
+            
+            <div class="form-group">
+                <label>物資名稱：</label>
+                <select name="item_name" id="item_select" onchange="checkOther(this.value)" required>
+                    <option value="">-- 請選擇物資 --</option>
+                    <option value="輪椅">輪椅</option>
+                    <option value="血壓計">血壓計</option>
+                    <option value="成人尿布">成人尿布</option>
+                    <option value="其他">其他</option>
+                </select>
+            </div>
+
+            <div class="form-group" id="other_input_div" style="display:none;">
+                <label>請輸入其他物資名稱：</label>
+                <input type="text" name="other_item" id="other_item_input" placeholder="例如：特殊營養品、拐杖...">
+            </div>
+            
+            <div class="form-group">
+                <label>需求數量：</label>
+                <input type="number" name="quantity" min="1" placeholder="請輸入需要的數量" required>
+            </div>
+
+            <div class="form-group">
+                <label>申請單位 / 聯絡人：</label>
+                <input type="text" name="requester_name" placeholder="例如：大樹區王社工" required>
+            </div>
+
+            <div class="form-group">
+                <label>需求地址：</label>
+                <input type="text" name="address" placeholder="請輸入完整送達地址 (例如：高雄市大樹區...)" required>
+            </div>
+
+            <div class="form-group">
+                <label>需求急迫性 (1最不急 ~ 5最緊急)：</label>
+                <select name="urgency" required>
+                    <option value="">-- 請評估急迫性 --</option>
+                    <option value="1">1 - 一般補充</option>
+                    <option value="2">2 - 近期需要</option>
+                    <option value="3">3 - 庫存快空了</option>
+                    <option value="4">4 - 非常緊急</option>
+                    <option value="5">5 - 關乎生命安全</option>
+                </select>
+            </div>
+
+            <button type="submit" class="submit-btn">✅ 送出申請</button>
+        </form>
     </div>
+
+    <a href="/" class="back-link">⬅ 回到首頁</a>
+
     <script>
     function checkOther(value) {
         var otherDiv = document.getElementById('other_input_div');
         if (value === '其他') {
-            otherDiv.style.display = 'block'; // 顯示輸入框
-            document.getElementById('other_item_input').required = true; // 設為必填
+            otherDiv.style.display = 'block'; 
+            document.getElementById('other_item_input').required = true; 
         } else {
-            otherDiv.style.display = 'none'; // 隱藏
-            document.getElementById('other_item_input').required = false; // 取消必填
+            otherDiv.style.display = 'none'; 
+            document.getElementById('other_item_input').required = false; 
         }
     }
     </script>
-    <div style="margin-top: 10px;">
-            <label>需求數量：</label>
-            <input type="number" name="quantity" min="1" required>
-        </div>
 
-        <div style="margin-top: 10px;">
-            <label>申請單位 / 聯絡人：</label>
-            <input type="text" name="requester_name" placeholder="例如：大樹區王社工" required>
-        </div>
-
-        <div style="margin-top: 10px;">
-            <label>需求地址：</label>
-            <input type="text" name="address" placeholder="請輸入完整送達地址 (例如：高雄市大樹區學城路...)" required style="width: 300px;">
-        </div>
-
-        <div style="margin-top: 10px;">
-            <label>需求急迫性 (1最不急 ~ 5最緊急)：</label>
-            <select name="urgency" required>
-                <option value="">-- 請評估急迫性 --</option>
-                <option value="1">1 - 一般補充</option>
-                <option value="2">2 - 近期需要</option>
-                <option value="3">3 - 庫存快空了</option>
-                <option value="4">4 - 非常緊急</option>
-                <option value="5">5 - 關乎生命安全</option>
-            </select>
-        </div>
-
-        <button type="submit" style="margin-top: 20px; padding: 10px 20px; cursor: pointer;">送出申請</button>
-    </form>
-    <br>
-    <a href="/">回到首頁</a>
 </body>
 </html>
