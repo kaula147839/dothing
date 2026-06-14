@@ -115,7 +115,7 @@
                 <tr>
                     <th>ID</th>
                     <th>申請單位 / 聯絡人</th>
-                    <th>需求物資</th>
+                    <th>聯絡電話</th> <th>需求物資</th>
                     <th>數量</th>
                     <th>需求地址</th>
                     <th>急迫性</th>
@@ -128,7 +128,7 @@
                 <tr>
                     <td><span style="color: #6c757d; font-weight: bold;">#{{ req.id }}</span></td>
                     <td style="font-weight: bold;">{{ req.requester_name }}</td>
-                    <td style="color: #d35400; font-weight: bold;">{{ req.item_name }}</td>
+                    <td>{{ req.phone }}</td> <td style="color: #d35400; font-weight: bold;">{{ req.item_name }}</td>
                     <td>{{ req.quantity }}</td>
                     <td>{{ req.address }}</td>
                     
@@ -151,7 +151,7 @@
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="8" style="text-align:center; padding: 40px; color: #6c757d;">
+                    <td colspan="9" style="text-align:center; padding: 40px; color: #6c757d;">
                         <div style="font-size: 2em; margin-bottom: 10px;">📭</div>
                         目前沒有任何需求申請
                     </td>

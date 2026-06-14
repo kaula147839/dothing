@@ -49,9 +49,10 @@
             font-size: 0.95em;
         }
 
-        /* 輸入框通用樣式 */
+        /* 輸入框通用樣式 (✨ 已加上 input[type="tel"] 支援電話欄位) */
         input[type="text"],
         input[type="number"],
+        input[type="tel"],
         select {
             width: 100%;
             padding: 10px;
@@ -62,9 +63,10 @@
             transition: border-color 0.3s, box-shadow 0.3s;
         }
 
-        /* 輸入框被點擊時的橘色高光效果 */
+        /* 輸入框被點擊時的橘色高光效果 (✨ 這裡也同步更新了) */
         input[type="text"]:focus,
         input[type="number"]:focus,
+        input[type="tel"]:focus,
         select:focus {
             border-color: #ff9800;
             outline: none;
@@ -137,6 +139,11 @@
             <div class="form-group">
                 <label>申請單位 / 聯絡人：</label>
                 <input type="text" name="requester_name" placeholder="例如：大樹區王社工" required>
+            </div>
+
+            <div class="form-group">
+                <label>聯絡電話：</label>
+                <input type="tel" name="phone" placeholder="例如：0912345678" required>
             </div>
 
             <div class="form-group">

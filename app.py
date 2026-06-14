@@ -40,13 +40,14 @@ class Donation(db.Model):
     # 新增這行：記錄照片的檔名 (允許空白)
     image_filename = db.Column(db.String(200), nullable=True)
     timestamp = db.Column(db.DateTime, default=datetime.now)
-
+    remarks = db.Column(db.String(500), nullable=True) # 備註 (nullable=True 代表允許不填)
 
 class RequestItem(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     item_name = db.Column(db.String(100), nullable=False) # 需要什麼物資
     quantity = db.Column(db.Integer, nullable=False)      # 需要多少
     requester_name = db.Column(db.String(100), nullable=False) # 申請單位/人
+    phone = db.Column(db.String(20), nullable=False)
     
     # 對應你的演算法變數：
     address = db.Column(db.String(50), nullable=False)    # 據點位置 (用來算 Distance)
@@ -483,6 +484,7 @@ def make_request():
             item_name=item,  # 這裡改成剛剛處理好的 item 變數
             quantity=request.form.get('quantity'),
             requester_name=request.form.get('requester_name'),
+            phone=request.form.get('phone'),  # ✨ 新增這行：抓取前端傳來的聯絡電話
             address=request.form.get('address'),
             # 把急迫性轉成整數存進去
             urgency=int(request.form.get('urgency')) 
@@ -560,24 +562,24 @@ def init_data():
     ]
     db.session.add_all(initial_hubs)
     
-    # 3. 建立測試用【庫存物資】(✨ 這裡有電話！)
+    # 3. 建立測試用【庫存物資】(✨ 補上 remarks 備註，讓測試畫面更豐富)
     initial_donations = [
-        Donation(item_name="成人尿布", quantity=10, condition="全新", donor_name="善心人A", address="南部據點", phone="0911111111"),
-        Donation(item_name="成人尿布", quantity=5, condition="全新", donor_name="善心人B", address="西部據點", phone="0922222222"),
-        Donation(item_name="輪椅", quantity=1, condition="二手", donor_name="李大明", address="中部據點", phone="0933333333"),
-        Donation(item_name="輪椅", quantity=2, condition="全新", donor_name="張阿姨", address="北部據點", phone="0944444444"),
-        Donation(item_name="血壓計", quantity=3, condition="全新", donor_name="陳建國", address="東部據點", phone="0955555555"),
-        Donation(item_name="血壓計", quantity=5, condition="二手", donor_name="王先生", address="南部據點", phone="0966666666")
+        Donation(item_name="成人尿布", quantity=10, condition="全新", donor_name="善心人A", address="南部據點", phone="0911111111", remarks="L號，完整未拆封"),
+        Donation(item_name="成人尿布", quantity=5, condition="全新", donor_name="善心人B", address="西部據點", phone="0922222222", remarks="M號"),
+        Donation(item_name="輪椅", quantity=1, condition="二手", donor_name="李大明", address="中部據點", phone="0933333333", remarks="右邊煞車微鬆，已上油保養"),
+        Donation(item_name="輪椅", quantity=2, condition="全新", donor_name="張阿姨", address="北部據點", phone="0944444444", remarks=""),
+        Donation(item_name="血壓計", quantity=3, condition="全新", donor_name="陳建國", address="東部據點", phone="0955555555", remarks="附全新電池"),
+        Donation(item_name="血壓計", quantity=5, condition="二手", donor_name="王先生", address="南部據點", phone="0966666666", remarks="功能正常，無外盒")
     ]
     db.session.add_all(initial_donations)
     
-    # 4. 建立測試用【需求申請】(✨ 這裡沒有電話！)
+    # 4. 建立測試用【需求申請】(✨ 這裡補上缺少的 phone 聯絡電話！)
     initial_requests = [
-        RequestItem(item_name="成人尿布", quantity=2, requester_name="彰化吳老先生", address="彰化縣彰化市介壽里建興路1號", urgency=4),
-        RequestItem(item_name="輪椅", quantity=1, requester_name="南投仁愛之家", address="南投縣仁愛鄉大同村", urgency=5),
-        RequestItem(item_name="輪椅", quantity=1, requester_name="桃園李爺爺", address="桃園市中壢區", urgency=3),
-        RequestItem(item_name="血壓計", quantity=1, requester_name="台北林奶奶", address="台北市信義區", urgency=2),
-        RequestItem(item_name="血壓計", quantity=2, requester_name="高雄長照中心", address="高雄市三民區", urgency=5)
+        RequestItem(item_name="成人尿布", quantity=2, requester_name="彰化吳老先生", address="彰化縣彰化市介壽里建興路1號", urgency=4, phone="0988111222"),
+        RequestItem(item_name="輪椅", quantity=1, requester_name="南投仁愛之家", address="南投縣仁愛鄉大同村", urgency=5, phone="0988333444"),
+        RequestItem(item_name="輪椅", quantity=1, requester_name="桃園李爺爺", address="桃園市中壢區", urgency=3, phone="0988555666"),
+        RequestItem(item_name="血壓計", quantity=1, requester_name="台北林奶奶", address="台北市信義區", urgency=2, phone="0988777888"),
+        RequestItem(item_name="血壓計", quantity=2, requester_name="高雄長照中心", address="高雄市三民區", urgency=5, phone="0988999000")
     ]
     db.session.add_all(initial_requests)
     
@@ -585,7 +587,6 @@ def init_data():
     db.session.commit()
     
     return "✅ 據點、物資、需求資料已全數初始化成功！請點擊這裡回到 <a href='/admin?password=1234'>管理員後台</a> 查看。"
-
 @app.route('/api/items')
 def get_items():
     items = Donation.query.all()

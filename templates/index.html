@@ -40,7 +40,19 @@
         .subtitle {
             color: #6c757d;
             font-size: 1.1em;
-            margin-bottom: 40px;
+            margin-bottom: 20px; /* 微調了間距 */
+        }
+
+        /* ✨ 新增：比賽用途專屬聲明橫幅 ✨ */
+        .demo-warning {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px dashed #ffeeba;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: 0.9em;
+            margin-bottom: 35px;
+            display: inline-block;
         }
 
         /* 功能卡片網格佈局 (CSS Grid) */
@@ -161,6 +173,10 @@
     <div class="main-container">
         <h1>🤝 慈善物資媒合平台</h1>
         <p class="subtitle">讓閒置資源找到最需要的人，請選擇您要進行的服務</p>
+        
+        <div class="demo-warning">
+            ⚠️ <strong>系統聲明：</strong>本平台目前僅供「展示與比賽用途」，無真實物流與物資媒合行為。
+        </div>
         
         <div class="action-grid">
             <a href="/donate" class="action-card btn-donate">

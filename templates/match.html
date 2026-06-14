@@ -10,7 +10,8 @@
         th, td { border: 1px solid #ddd; padding: 10px; text-align: center; }
         th { background-color: #007bff; color: white; }
         .highlight { background-color: #fff3cd; font-weight: bold; } /* 最高分亮橘色 */
-        .btn { padding: 8px 15px; text-decoration: none; border-radius: 4px; color: white; background-color: #28a745; }
+        .btn { padding: 8px 15px; text-decoration: none; border-radius: 4px; color: white; background-color: #28a745; transition: background-color 0.3s; }
+        .btn:hover { background-color: #218838; }
     </style>
 </head>
 <body>
@@ -26,7 +27,6 @@
 
     <div class="card">
         <h2>🧠 演算法推薦配送名單</h2>
-        <p>公式：$Score = w_1 \cdot (1/Distance) + w_2 \cdot (Urgency\_Level) + w_3 \cdot (Waiting\_Hours)$</p>
         
         <table>
             <tr>
@@ -48,12 +48,12 @@
                 <td>{{ result.request.urgency }}</td>
                 <td>{{ result.hours_waiting }} 小時</td>
                 <td>
-                        <a href="{{ url_for('allocate_match', request_id=match.request.id, donation_id=donation.id) }}" class="btn btn-success">✅ 調用此物資</a>
+                    <a href="{{ url_for('allocate_match', request_id=result.request.id, donation_id=donation.id) }}" class="btn">✅ 調用此物資</a>
                 </td>
             </tr>
             {% else %}
             <tr>
-                <td colspan="7">目前沒有需要「{{ donation.item_name }}」的未結案需求。</td>
+                <td colspan="7" style="padding: 30px; color: #777;">目前沒有需要「{{ donation.item_name }}」的未結案需求。</td>
             </tr>
             {% endfor %}
         </table>
